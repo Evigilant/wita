@@ -104,7 +104,7 @@ Hooks.on("renderCharacterActorSheet", (sheet, html) => {
     // ApplicationV2 controls use { action } strings — not hookable with onclick.
     // DOM injection into .window-header is the correct approach for v13.
     const header = root.querySelector(".window-header");
-    if (header && !header.querySelector(".wita-craft-level-control")) {
+    if (header && !header.querySelector(".wita-craft-level-btn")) {
         const ellipsis = header.querySelector(".fa-ellipsis-vertical")?.closest("button");
         const mkBtn = (cssClass, tooltip, icon, handler) => {
             const btn = document.createElement("button");

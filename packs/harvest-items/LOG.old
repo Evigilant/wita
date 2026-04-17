@@ -1,24 +1,3 @@
-2026/04/16-14:47:15.459184 7a999bfff6c0 Recovering log #15
-2026/04/16-14:47:15.462886 7a999bfff6c0 Delete type=3 #12
-2026/04/16-14:47:15.462901 7a999bfff6c0 Delete type=0 #11
-2026/04/16-14:47:15.463020 7a999bfff6c0 Delete type=0 #5
-2026/04/16-14:47:15.463028 7a999bfff6c0 Delete type=0 #14
-2026/04/16-14:47:15.463036 7a999bfff6c0 Delete type=3 #8
-2026/04/16-14:47:15.463048 7a999bfff6c0 Delete type=3 #4
-2026/04/16-14:47:15.463060 7a999bfff6c0 Delete type=0 #15
-2026/04/16-14:47:15.463068 7a999bfff6c0 Delete type=0 #3
-2026/04/16-14:47:15.463076 7a999bfff6c0 Delete type=3 #2
-2026/04/16-14:47:15.463087 7a999bfff6c0 Delete type=3 #10
-2026/04/16-15:12:37.367878 7a9703fff6c0 Moved #13 to level-1 591136 bytes OK: files[ 0 1 1 0 0 0 0 ]
-2026/04/16-15:13:20.093025 7a9703fff6c0 Level-0 table #19: started
-2026/04/16-15:13:20.093033 7a9703fff6c0 Level-0 table #19: 0 bytes OK
-2026/04/16-15:13:20.094664 7a9703fff6c0 Delete type=0 #17
-2026/04/16-15:13:20.097731 7a9703fff6c0 Manual compaction at level-0 from '!items!03YsOhdtWLe9es9c' @ 72057594037927935 : 1 .. '!items!zzga68AfEZTzaibv' @ 0 : 0; will stop at (end)
-2026/04/16-15:13:20.100086 7a9703fff6c0 Manual compaction at level-1 from '!items!03YsOhdtWLe9es9c' @ 72057594037927935 : 1 .. '!items!zzga68AfEZTzaibv' @ 0 : 0; will stop at '!items!zzga68AfEZTzaibv' @ 2612 : 1
-2026/04/16-15:13:20.100089 7a9703fff6c0 Compacting 1@1 + 1@2 files
-2026/04/16-15:13:20.106286 7a9703fff6c0 Generated table #20@1: 1306 keys, 591136 bytes
-2026/04/16-15:13:20.106292 7a9703fff6c0 Compacted 1@1 + 1@2 files => 591136 bytes
-2026/04/16-15:13:20.107253 7a9703fff6c0 compacted to: files[ 0 0 1 0 0 0 0 ]
-2026/04/16-15:13:20.107328 7a9703fff6c0 Delete type=2 #13
-2026/04/16-15:13:20.107416 7a9703fff6c0 Delete type=2 #5
-2026/04/16-15:13:20.115887 7a9703fff6c0 Manual compaction at level-1 from '!items!zzga68AfEZTzaibv' @ 2612 : 1 .. '!items!zzga68AfEZTzaibv' @ 0 : 0; will stop at (end)
+2026/04/16-15:13:28.676672 7a999b7fe6c0 Recovering log #18
+2026/04/16-15:13:28.680068 7a999b7fe6c0 Delete type=3 #16
+2026/04/16-15:13:28.680097 7a999b7fe6c0 Delete type=0 #18

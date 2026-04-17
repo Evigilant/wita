@@ -5,6 +5,27 @@ import { WITACompendiumLoader } from "./compendium-loader.js";
 import { WITA_POTION_CRAFTING, WITA_POTION_EXP_TABLE } from "./potion-config.js";
 import { WITA_POTION_ENVIRONMENTS } from "./potion-data.js";
 
+// ── Inventory helpers ──────────────────────────────────────────
+function _witaIngredientStock(actor) {
+    return actor.items.contents.reduce((acc, item) => {
+        acc[item.name] = (acc[item.name] ?? 0) + (item.system?.quantity ?? 1);
+        return acc;
+    }, {});
+}
+
+async function _witaAddIngredientToInventory(actor, ing, qty) {
+    const existing = actor.items.contents.find(i => i.name === ing.name);
+    if (existing) {
+        await existing.update({ "system.quantity": (existing.system?.quantity ?? 1) + qty });
+    } else {
+        const source = await fromUuid(ing.uuid);
+        if (!source) return;
+        const itemData = source.toObject();
+        foundry.utils.setProperty(itemData, "system.quantity", qty);
+        await actor.createEmbeddedDocuments("Item", [itemData]);
+    }
+}
+
 // TODO(v14): migrate to ApplicationV2
 export class WITAGatheringDialog extends Application {
     constructor(actor, options = {}) {
@@ -35,7 +56,7 @@ export class WITAGatheringDialog extends Application {
             actor, level, bonus, exp, profBonus,
             environments: WITA_POTION_ENVIRONMENTS,
             ingredients:  this._ingredients,
-            stock:        WITA_POTION_CRAFTING.getStock(actor),
+            stock:        _witaIngredientStock(actor),
         };
     }
 
@@ -121,10 +142,10 @@ export class WITAGatheringDialog extends Application {
 
         if (success) {
             const qty = (await new Roll(ing.quantity).evaluate()).total;
-            await WITA_POTION_CRAFTING.addIngredient(actor, ing.name, qty);
+            await _witaAddIngredientToInventory(actor, ing, qty);
             expGained = (WITA_POTION_EXP_TABLE.gather[ing.gatherRarity] ?? 0) * qty;
             if (expGained > 0) await WITA_POTION_CRAFTING.awardExp(actor, expGained, `harvesting ${ing.name}`);
-            resultText = `✅ Harvested <strong>${qty}×</strong> ${ing.name}. Added to stock.`;
+            resultText = `✅ Harvested <strong>${qty}×</strong> ${ing.name}. Added to inventory.`;
         } else {
             const f = (await new Roll("1d4").evaluate()).total;
             resultText = ["❌ Ingredient destroyed.", "⚠️ Quantity halved — none gained.", "⚠️ Quantity quartered — none gained.", "⚠️ Ingredient unaffected."][f - 1];
