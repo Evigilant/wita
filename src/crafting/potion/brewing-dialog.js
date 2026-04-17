@@ -1,42 +1,18 @@
 // ============================================================
 // WITA — POTION BREWING DIALOG
-// Recipe selection with SC Cauldron knowledge check, craft roll,
-// then hands off to SC Cauldron for ingredient assembly and delivery.
+// Recipe selection with craft roll, then hands off to SC Cauldron
+// for ingredient assembly and delivery on success.
 // EXP awarded via sc-the-cauldron.recipeCrafted hook.
-// Recipe learning is managed entirely by SC Cauldron.
+// Recipe learning managed entirely by SC Cauldron.
+// Ingredient stock read from actor inventory only (no flags).
 // ============================================================
 import { WITACompendiumLoader } from "./compendium-loader.js";
+import { witaFindIngredientBag } from "./gathering-dialog.js";
 import {
     WITA_POTION_CRAFTING,
     WITA_RARITY_LEVEL_GATES,
     WITA_POTION_CRAFTING_RULES,
 } from "./potion-config.js";
-
-// ── Migration: flag stockpile → inventory items ────────────────
-async function _witaMigrateStockToInventory(actor, flagStock, ingredients) {
-    const ingMeta = Object.fromEntries(ingredients.map(i => [i.name, i]));
-    let migrated  = 0;
-    for (const [name, qty] of Object.entries(flagStock)) {
-        if (!qty || qty <= 0) continue;
-        const ing = ingMeta[name];
-        if (!ing) continue;
-        const existing = actor.items.contents.find(i => i.name === name);
-        if (existing) {
-            await existing.update({ "system.quantity": (existing.system?.quantity ?? 1) + qty });
-        } else {
-            const source = await fromUuid(ing.uuid);
-            if (!source) continue;
-            const itemData = source.toObject();
-            foundry.utils.setProperty(itemData, "system.quantity", qty);
-            await actor.createEmbeddedDocuments("Item", [itemData]);
-        }
-        migrated++;
-    }
-    if (migrated) {
-        await actor.setFlag("wita", "craftIngredientStock", {});
-        ui.notifications.info(`WITA: Migrated ${migrated} ingredient type(s) to ${actor.name}'s inventory.`);
-    }
-}
 
 // TODO(v14): migrate to ApplicationV2
 export class WITABrewingDialog extends Application {
@@ -47,13 +23,12 @@ export class WITABrewingDialog extends Application {
         this.selectedRecipe = null;
         this._allRecipes    = [];
         this._ingredients   = [];
-        this._stockMigrated = false;
     }
 
     static get defaultOptions() {
         return foundry.utils.mergeObject(super.defaultOptions, {
             id: "wita-brewing-dialog",
-            title: "Potion Brewing",
+            title: "Crafting",
             template: `modules/wita/templates/potion/brewing.html`,
             width: 700,
             height: "auto",
@@ -67,24 +42,31 @@ export class WITABrewingDialog extends Application {
         if (!this._allRecipes.length)  this._allRecipes  = await WITACompendiumLoader.loadRecipes();
         if (!this._ingredients.length) this._ingredients = await WITACompendiumLoader.loadIngredients();
 
-        const actor    = this.actor;
+        const actor     = this.actor;
         const { level, bonus, exp } = WITA_POTION_CRAFTING.getState(actor);
         const profBonus = actor.system.attributes?.prof ?? 2;
 
-        // SC Cauldron recipe knowledge — read directly from user flags
-        const scKnownIds   = new Set(game.user.getFlag("sc-the-cauldron", "knownRecipeIds") ?? []);
-        const kitRecipes   = this._allRecipes.filter(r => r.kit === this.selectedKit);
-        const annotated    = kitRecipes.map(r => ({
+        // Find the player assigned to this actor to read their SC Cauldron recipe knowledge.
+        // If no player is assigned (NPC / GM-only actor), show all recipes.
+        const scActive   = game.modules.get("sc-the-cauldron")?.active === true;
+        const actorOwner = game.users.find(u => !u.isGM && u.character?.id === actor.id) ?? null;
+        const knownIds   = actorOwner
+            ? new Set(actorOwner.getFlag("sc-the-cauldron", "knownRecipeIds") ?? [])
+            : null; // null = no player assigned → show all
+
+        const kitRecipes = this._allRecipes.filter(r => {
+            if (r.kit !== this.selectedKit) return false;
+            if (!scActive || knownIds === null) return true;
+            return knownIds.has(r.uuid) || knownIds.has(r._id);
+        });
+        const annotated  = kitRecipes.map(r => ({
             ...r,
             requiredLevel: WITA_RARITY_LEVEL_GATES[r.rarity] ?? 1,
             underLevel:    level < (WITA_RARITY_LEVEL_GATES[r.rarity] ?? 1),
-            scKnown:       scKnownIds.size === 0 || scKnownIds.has(r.scId ?? ""),
         }));
 
-        // Ingredient metadata keyed by name for recipe detail lookups
         const ingByName = Object.fromEntries(this._ingredients.map(i => [i.name, i]));
 
-        // Annotate selected recipe's ingredients with compendium data
         let selectedRecipeDetail = null;
         if (this.selectedRecipe) {
             const required = {};
@@ -99,20 +81,24 @@ export class WITABrewingDialog extends Application {
             };
         }
 
-        // Auto-migrate flag-based stock to inventory — once per dialog instance
-        if (!this._stockMigrated) {
-            this._stockMigrated = true;
-            const flagStock = WITA_POTION_CRAFTING.getStock(actor);
-            if (Object.keys(flagStock).length) {
-                await _witaMigrateStockToInventory(actor, flagStock, this._ingredients);
-            }
-        }
-
         const ingredientNames = new Set(this._ingredients.map(i => i.name));
+        const bag = witaFindIngredientBag(actor);
+        const containerId = bag?._id ?? null;
         const stockItems = actor.items.contents
-            .filter(i => ingredientNames.has(i.name))
+            .filter(i => ingredientNames.has(i.name) && (!containerId || i.system?.container === containerId))
             .map(i => ({ name: i.name, img: i.img, uuid: i.uuid, quantity: i.system?.quantity ?? 1 }))
             .sort((a, b) => a.name.localeCompare(b.name));
+
+        // Annotate each required ingredient with how many the actor currently holds
+        if (selectedRecipeDetail) {
+            const stockByName = Object.fromEntries(stockItems.map(i => [i.name, i.quantity]));
+            selectedRecipeDetail.ingredientDetails = selectedRecipeDetail.ingredientDetails.map(ing => {
+                const have    = stockByName[ing.name] ?? 0;
+                const missing = Math.max(0, ing.qty - have);
+                return { ...ing, have, missing };
+            });
+            selectedRecipeDetail.canCraft = selectedRecipeDetail.ingredientDetails.every(i => i.missing === 0);
+        }
 
         return {
             actor, level, bonus, exp, profBonus,
@@ -147,13 +133,11 @@ export class WITABrewingDialog extends Application {
             if (this.selectedRecipe) await this._brewPotion(this.selectedRecipe);
         });
 
-        // Ingredient inspect links (recipe detail — no drag)
         html.find(".ing-inspect").on("click", async e => {
             const uuid = $(e.currentTarget).data("uuid");
             if (uuid) (await fromUuid(uuid))?.sheet?.render(true);
         });
 
-        // Stock items — draggable to SC Cauldron
         html.find(".pbg-stock-item[data-uuid]").each((_, el) => {
             el.addEventListener("dragstart", ev => {
                 ev.dataTransfer.setData("text/plain", JSON.stringify({
@@ -228,7 +212,7 @@ export class WITABrewingDialog extends Application {
                     <p>✅ <strong>Success!</strong> Drag your ingredients into SC Cauldron to complete the craft.</p>`,
                 speaker: ChatMessage.getSpeaker({ actor }),
             });
-            this.close();
+            this.render();
             game.modules.get("sc-the-cauldron")?.api?.openCauldronForDocument(actor);
         } else {
             const fateRoll = await new Roll("1d2").evaluate();

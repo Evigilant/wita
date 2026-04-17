@@ -10,35 +10,30 @@
 
   <div class="pbg-header">
     <div class="pbg-stat"><span class="pbg-stat-label">Actor</span><span class="pbg-stat-value">{{actor.name}}</span></div>
-    <div class="pbg-stat"><span class="pbg-stat-label">Craft Level</span><span class="pbg-stat-value lvl-badge">{{level}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">Craft Lvl</span><span class="pbg-stat-value lvl-badge">{{level}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">Nature</span><span class="pbg-stat-value">{{#if (gte natureMod 0)}}+{{/if}}{{natureMod}}</span></div>
     <div class="pbg-stat"><span class="pbg-stat-label">PM Bonus</span><span class="pbg-stat-value">+{{bonus}}</span></div>
     <div class="pbg-stat"><span class="pbg-stat-label">Proficiency</span><span class="pbg-stat-value">+{{profBonus}}</span></div>
-    <div class="pbg-stat"><span class="pbg-stat-label">Total EXP</span><span class="pbg-stat-value">{{exp}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">Craft EXP</span><span class="pbg-stat-value">{{exp}}</span></div>
   </div>
 
   <details class="pbg-rules">
     <summary>📖 Gathering Rules</summary>
     <div class="pbg-rules-body">
-      <p><strong>Survey (Nature Check):</strong> 15 min. +3 per additional 15 min (max +6).</p>
+      <p><strong>Survey (Nature Check):</strong> Roll 1d20 + WIS + Prof to identify ingredients. Also rolls 1d6 + Nature mod to set your harvest slots. 1 use per long rest.</p>
       <ul>
-        <li><strong>10+:</strong> All common plants/fungi identified.</li>
+        <li><strong>10+:</strong> Common ingredients identified.</li>
         <li><strong>15+:</strong> Common + uncommon identified.</li>
-        <li><strong>20+:</strong> Common, uncommon, and rare identified.</li>
+        <li><strong>20+:</strong> All rarities identified.</li>
       </ul>
-      <p><strong>Harvest roll:</strong> 1d20 + proficiency + PM level bonus. 10 min per ingredient (+3/extra 10 min, max +6).</p>
+      <p><strong>Harvest:</strong> Select up to your slot count, then roll 1d20 + Prof + PM bonus per ingredient.</p>
       <p><strong>Failure (d4):</strong> 1 = destroyed · 2 = qty ÷2 · 3 = qty ÷4 · 4 = unaffected</p>
     </div>
   </details>
 
-  <div class="pbg-section">
+  {{!-- Survey Section --}}
+  <div class="pbg-section pbg-survey-section">
     <h3>🗺️ Survey Area</h3>
-    <div class="pbg-row">
-      <label>Environment:</label>
-      <select id="env-filter">
-        <option value="">— All Environments —</option>
-        {{#each environments}}<option value="{{this}}">{{this}}</option>{{/each}}
-      </select>
-    </div>
     <div class="pbg-row">
       <label>Extra survey time:</label>
       <select id="nature-extra">
@@ -47,44 +42,74 @@
         <option value="30">+30 min (+6 max)</option>
       </select>
     </div>
-    <button class="btn-nature-check pbg-btn pbg-btn-primary">🎲 Roll Nature Check</button>
+    <div class="pbg-nature-check-row">
+      <button class="btn-nature-check pbg-btn pbg-btn-primary" {{#if natureChecksExhausted}}disabled{{/if}}>🎲 Roll Nature Check</button>
+      <span class="nature-check-uses {{#if natureChecksExhausted}}exhausted{{/if}}">
+        {{natureChecksUsed}}/{{natureChecksMax}} use — resets on long rest
+      </span>
+      {{#if isGM}}
+      <button class="btn-reset-uses pbg-btn pbg-btn-sm" data-tooltip="GM: Reset nature check uses">↺ Reset</button>
+      {{/if}}
+    </div>
+    {{#if currentEnv}}
+    <p class="pbg-env-label">Environment: <strong>{{currentEnv}}</strong></p>
+    {{/if}}
   </div>
 
-  <div class="pbg-section">
-    <h3>🌿 Ingredients</h3>
+  {{!-- Ingredients Section --}}
+  <details class="pbg-ingredients-details" {{#unless slotsLocked}}open{{/unless}}>
+    <summary class="pbg-ingredients-summary">
+      🌿 Ingredients
+      {{#if harvestSlots}}
+      <span class="harvest-slots-badge">
+        <span class="harvest-selected-count">{{selectedCount}}</span>/{{harvestSlots}} selected
+      </span>
+      {{else}}
+      <span class="harvest-slots-badge locked">Roll Nature Check to unlock</span>
+      {{/if}}
+    </summary>
+
+    <div class="pbg-harvest-controls">
+      <div class="pbg-row">
+        <label>Extra harvest time:</label>
+        <select id="harvest-extra">
+          <option value="0">+0 min</option>
+          <option value="10">+10 min (+3)</option>
+          <option value="20">+20 min (+6 max)</option>
+        </select>
+      </div>
+      <button class="btn-harvest-selected pbg-btn pbg-btn-primary" {{#if (eq selectedCount 0)}}disabled{{/if}}>
+        🌾 Harvest Selected ({{selectedCount}})
+      </button>
+    </div>
+
     <table class="pbg-table">
       <thead>
         <tr>
-          <th>Name</th><th>Rarity</th><th>Survey DC</th><th>Harvest DC</th>
-          <th>Quantity</th><th>Locations</th><th>Stock</th><th>Extra Time</th><th></th>
+          <th style="width:28px"></th>
+          <th>Name</th><th>Rarity</th><th>Survey DC</th><th>Harvest DC</th><th>Quantity</th>
         </tr>
       </thead>
       <tbody>
         {{#each ingredients}}
-        <tr class="ingredient-row rarity-{{gatherRarity}}"
-            data-locations="{{#each locations}}{{this}},{{/each}}"
-            data-name="{{name}}">
-          <td class="ing-name" data-uuid="{{uuid}}" data-name="{{name}}" title="Click to view item">{{name}}</td>
+        <tr class="ingredient-row rarity-{{gatherRarity}}" data-name="{{name}}">
+          <td style="text-align:center">
+            <input type="checkbox" class="ing-checkbox" data-name="{{name}}"
+              {{#if selected}}checked{{/if}}
+              {{#if ../slotsLocked}}disabled{{/if}}>
+          </td>
+          <td class="ing-name" data-uuid="{{uuid}}" title="Click to view item">{{name}}</td>
           <td><span class="rarity-tag rarity-{{gatherRarity}}">{{gatherRarity}}</span></td>
           <td style="text-align:center">{{gatherDC}}</td>
           <td style="text-align:center">{{harvestDC}}</td>
-          <td style="color:#9e8fbf;font-style:italic">{{quantity}}</td>
-          <td style="font-size:0.8em;color:#7a9a7a">{{#each locations}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</td>
-          <td style="text-align:center;font-weight:bold;color:#e8c87a">{{lookup ../stock name}}</td>
-          <td>
-            <select class="harvest-extra" style="width:90px;font-size:0.75em">
-              <option value="0">+0 min</option>
-              <option value="10">+10 min</option>
-              <option value="20">+20 min</option>
-            </select>
-          </td>
-          <td><button class="btn-harvest pbg-btn pbg-btn-sm" data-name="{{name}}">Harvest</button></td>
+          <td style="color:#9e8fbf;font-style:italic;text-align:center">{{quantity}}</td>
         </tr>
         {{/each}}
       </tbody>
     </table>
-  </div>
+  </details>
 
+  {{!-- Ingredient Stock --}}
   <div class="pbg-section">
     <h3>🎒 Ingredient Stock</h3>
     {{#if stock}}
@@ -92,7 +117,7 @@
       {{#each stock}}<div class="pbg-stock-item"><span class="stock-name">{{@key}}</span><span class="stock-qty">×{{this}}</span></div>{{/each}}
     </div>
     {{else}}
-    <p class="pbg-empty">No ingredients in stock. Go harvest some!</p>
+    <p class="pbg-empty">No ingredients in bag. Harvest some to get started!</p>
     {{/if}}
   </div>
 

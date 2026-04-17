@@ -370,7 +370,16 @@
 }
 .pbg-ing-entry.ing-inspect { cursor: pointer; }
 .pbg-ing-entry.ing-inspect:hover { border-color: var(--color-highlights-50, rgba(146,42,96,.5)); color: var(--color-highlights, rgb(146,42,96)); }
-.pbg-brew-actions { display: flex; gap: 8px; }
+.pbg-ing-entry.ing-missing { border-color: var(--color-level-error, #e07575); }
+.ing-stock-badge {
+    margin-left: 4px;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--color-level-success, #6dca6d);
+}
+.ing-stock-badge.lacking { color: var(--color-level-error, #e07575); }
+.pbg-brew-actions { display: flex; align-items: center; gap: 8px; }
+.pbg-craft-blocked { font-size: 0.82em; color: var(--color-level-error, #e07575); }
 
 /* ---------- Empty States ---------- */
 .pbg-empty, .pbg-empty-state {
@@ -446,3 +455,85 @@
 
 /* ---------- Nature Check Section ---------- */
 .pbg-nature-check { display: flex; flex-direction: column; gap: 6px; }
+.pbg-nature-check-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.nature-check-uses {
+    font-size: 0.82em;
+    color: var(--color-form-hint, #8e8e9e);
+    white-space: nowrap;
+}
+.nature-check-uses.exhausted {
+    color: var(--color-level-error, #e07575);
+    font-weight: 600;
+}
+.pbg-env-label {
+    margin: 6px 0 0;
+    font-size: 0.85em;
+    color: var(--color-form-hint, #8e8e9e);
+}
+.pbg-env-label strong { color: var(--color-highlights, cornflowerblue); }
+
+/* ---------- Harvest Controls ---------- */
+.pbg-harvest-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 10px;
+    padding: 0 6px;
+    flex-wrap: wrap;
+}
+.pbg-harvest-controls .pbg-row {
+    margin: 0;
+    flex: 1;
+    min-width: 180px;
+}
+
+/* ---------- Collapsible Ingredients ---------- */
+.pbg-ingredients-details {
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.pbg-ingredients-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    list-style: none;
+    user-select: none;
+}
+.pbg-ingredients-summary::-webkit-details-marker { display: none; }
+.pbg-ingredients-summary::before {
+    content: "▶";
+    font-size: 0.7em;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+}
+.pbg-ingredients-details[open] .pbg-ingredients-summary::before { transform: rotate(90deg); }
+.harvest-slots-badge {
+    margin-left: auto;
+    font-size: 0.82em;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    color: var(--color-highlights, cornflowerblue);
+    border: 1px solid currentColor;
+}
+.harvest-slots-badge.locked {
+    color: var(--color-form-hint, #8e8e9e);
+    border-color: var(--color-form-hint, #8e8e9e);
+    font-weight: normal;
+}
+
+/* ---------- Ingredient checkboxes ---------- */
+.ing-checkbox {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: var(--color-highlights, cornflowerblue);
+}
+.ing-checkbox:disabled { cursor: not-allowed; opacity: 0.4; }

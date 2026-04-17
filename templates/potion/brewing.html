@@ -56,15 +56,19 @@
       <strong>Ingredients:</strong>
       <div class="pbg-ing-list">
         {{#each selectedRecipe.ingredientDetails}}
-        <div class="pbg-ing-entry {{#if uuid}}ing-inspect{{/if}}" {{#if uuid}}data-uuid="{{uuid}}"{{/if}} data-tooltip="{{#if uuid}}Click to inspect{{/if}}">
+        <div class="pbg-ing-entry {{#if uuid}}ing-inspect{{/if}} {{#if missing}}ing-missing{{/if}}"
+             {{#if uuid}}data-uuid="{{uuid}}"{{/if}}
+             data-tooltip="{{#if missing}}Missing {{missing}}×{{else}}In bag: {{have}}×{{/if}}{{#if uuid}} — Click to inspect{{/if}}">
           <img src="{{img}}" alt="{{name}}" class="pbg-stock-icon">
           <span>{{name}} ×{{qty}}</span>
+          <span class="ing-stock-badge {{#if missing}}lacking{{/if}}">{{have}}/{{qty}}</span>
         </div>
         {{/each}}
       </div>
     </div>
     <div class="pbg-brew-actions">
-      <button class="btn-brew pbg-btn pbg-btn-primary">⚗️ Attempt Brew</button>
+      <button class="btn-brew pbg-btn pbg-btn-primary" {{#unless selectedRecipe.canCraft}}disabled{{/unless}}>⚗️ Attempt Craft</button>
+      {{#unless selectedRecipe.canCraft}}<span class="pbg-craft-blocked">Missing ingredients</span>{{/unless}}
     </div>
   </div>
   {{else}}

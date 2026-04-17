@@ -9,7 +9,7 @@ import { witaSetting } from "../../settings/settings.js";
 import { WITA_POTION_CRAFTING, WITA_POTION_EXP_TABLE } from "./potion-config.js";
 import { WITACompendiumLoader } from "./compendium-loader.js";
 import { WITABrewingDialog } from "./brewing-dialog.js";
-import { WITAGatheringDialog } from "./gathering-dialog.js";
+import { WITAGatheringDialog, witaResetNatureChecks } from "./gathering-dialog.js";
 import { WITAPotionLevelSheet } from "./potion-level-sheet.js";
 
 // ── Ready ─────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ Hooks.on("getTokenContextOptions", (html, options) => {
             },
         },
         {
-            name: "Brew Potion",
+            name: "Crafting",
             icon: '<i class="fas fa-mortar-pestle"></i>',
             condition: li => canvas.tokens.get(li.data("tokenId"))?.actor?.type === "character",
             callback: li => {
@@ -88,6 +88,12 @@ Hooks.on("sc-the-cauldron.recipeCrafted", async (data) => {
     await WITA_POTION_CRAFTING.awardExp(actor, expAward, `crafting ${recipeName} (SC Cauldron)`);
 });
 
+// ── Long rest: reset nature check uses ────────────────────────
+Hooks.on("dnd5e.restCompleted", (actor, result) => {
+    if (!witaSetting("enablePotionBrewing")) return;
+    if (result.longRest) witaResetNatureChecks(actor);
+});
+
 // ── Craft Level badge on actor sheet ──────────────────────────
 // TODO(v14): html arg becomes HTMLElement in v14, not jQuery
 Hooks.on("renderCharacterActorSheet", (sheet, html) => {
@@ -104,7 +110,7 @@ Hooks.on("renderCharacterActorSheet", (sheet, html) => {
     // ApplicationV2 controls use { action } strings — not hookable with onclick.
     // DOM injection into .window-header is the correct approach for v13.
     const header = root.querySelector(".window-header");
-    if (header && !header.querySelector(".wita-craft-level-btn")) {
+    if (header && !header.querySelector(".wita-brew-btn")) {
         const ellipsis = header.querySelector(".fa-ellipsis-vertical")?.closest("button");
         const mkBtn = (cssClass, tooltip, icon, handler) => {
             const btn = document.createElement("button");
@@ -116,9 +122,8 @@ Hooks.on("renderCharacterActorSheet", (sheet, html) => {
             if (ellipsis) header.insertBefore(btn, ellipsis);
             else header.appendChild(btn);
         };
-        mkBtn("wita-gather-btn",      "Gather Ingredients",          "fas fa-leaf",          () => new WITAGatheringDialog(actor).render(true));
-        mkBtn("wita-brew-btn",        "Brew Potion",                 "fas fa-mortar-pestle", () => new WITABrewingDialog(actor).render(true));
-        mkBtn("wita-craft-level-btn", `Craft Level ${level} (+${bonus})`, "fa-solid fa-flask", () => new WITAPotionLevelSheet(actor).render(true));
+        mkBtn("wita-gather-btn", "Gather Ingredients", "fas fa-leaf",          () => new WITAGatheringDialog(actor).render(true));
+        mkBtn("wita-brew-btn",   "Crafting",           "fas fa-mortar-pestle", () => new WITABrewingDialog(actor).render(true));
     }
 
     // ── Features tab craft pill ───────────────────────────────
