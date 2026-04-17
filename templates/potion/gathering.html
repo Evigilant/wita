@@ -1,0 +1,100 @@
+{{!-- Ingredient Gathering Dialog --}}
+<div class="pbg-wrap">
+
+{{#if depMissing}}
+  <div class="pbg-dep-error">
+    <p>⚠️ <strong>Potion Crafting & Gathering</strong> module is not active.</p>
+    <p>Please install and enable it from the Foundry module browser, then reload.</p>
+  </div>
+{{else}}
+
+  <div class="pbg-header">
+    <div class="pbg-stat"><span class="pbg-stat-label">Actor</span><span class="pbg-stat-value">{{actor.name}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">Craft Level</span><span class="pbg-stat-value lvl-badge">{{level}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">PM Bonus</span><span class="pbg-stat-value">+{{bonus}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">Proficiency</span><span class="pbg-stat-value">+{{profBonus}}</span></div>
+    <div class="pbg-stat"><span class="pbg-stat-label">Total EXP</span><span class="pbg-stat-value">{{exp}}</span></div>
+  </div>
+
+  <details class="pbg-rules">
+    <summary>📖 Gathering Rules</summary>
+    <div class="pbg-rules-body">
+      <p><strong>Survey (Nature Check):</strong> 15 min. +3 per additional 15 min (max +6).</p>
+      <ul>
+        <li><strong>10+:</strong> All common plants/fungi identified.</li>
+        <li><strong>15+:</strong> Common + uncommon identified.</li>
+        <li><strong>20+:</strong> Common, uncommon, and rare identified.</li>
+      </ul>
+      <p><strong>Harvest roll:</strong> 1d20 + proficiency + PM level bonus. 10 min per ingredient (+3/extra 10 min, max +6).</p>
+      <p><strong>Failure (d4):</strong> 1 = destroyed · 2 = qty ÷2 · 3 = qty ÷4 · 4 = unaffected</p>
+    </div>
+  </details>
+
+  <div class="pbg-section">
+    <h3>🗺️ Survey Area</h3>
+    <div class="pbg-row">
+      <label>Environment:</label>
+      <select id="env-filter">
+        <option value="">— All Environments —</option>
+        {{#each environments}}<option value="{{this}}">{{this}}</option>{{/each}}
+      </select>
+    </div>
+    <div class="pbg-row">
+      <label>Extra survey time:</label>
+      <select id="nature-extra">
+        <option value="0">+0 min</option>
+        <option value="15">+15 min (+3)</option>
+        <option value="30">+30 min (+6 max)</option>
+      </select>
+    </div>
+    <button class="btn-nature-check pbg-btn pbg-btn-primary">🎲 Roll Nature Check</button>
+  </div>
+
+  <div class="pbg-section">
+    <h3>🌿 Ingredients</h3>
+    <table class="pbg-table">
+      <thead>
+        <tr>
+          <th>Name</th><th>Rarity</th><th>Survey DC</th><th>Harvest DC</th>
+          <th>Quantity</th><th>Locations</th><th>Stock</th><th>Extra Time</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each ingredients}}
+        <tr class="ingredient-row rarity-{{gatherRarity}}"
+            data-locations="{{#each locations}}{{this}},{{/each}}"
+            data-name="{{name}}">
+          <td class="ing-name" data-uuid="{{uuid}}" data-name="{{name}}" title="Click to view item">{{name}}</td>
+          <td><span class="rarity-tag rarity-{{gatherRarity}}">{{gatherRarity}}</span></td>
+          <td style="text-align:center">{{gatherDC}}</td>
+          <td style="text-align:center">{{harvestDC}}</td>
+          <td style="color:#9e8fbf;font-style:italic">{{quantity}}</td>
+          <td style="font-size:0.8em;color:#7a9a7a">{{#each locations}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</td>
+          <td style="text-align:center;font-weight:bold;color:#e8c87a">{{lookup ../stock name}}</td>
+          <td>
+            <select class="harvest-extra" style="width:90px;font-size:0.75em">
+              <option value="0">+0 min</option>
+              <option value="10">+10 min</option>
+              <option value="20">+20 min</option>
+            </select>
+          </td>
+          <td><button class="btn-harvest pbg-btn pbg-btn-sm" data-name="{{name}}">Harvest</button></td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pbg-section">
+    <h3>🎒 Ingredient Stock</h3>
+    {{#if stock}}
+    <div class="pbg-stock-grid">
+      {{#each stock}}<div class="pbg-stock-item"><span class="stock-name">{{@key}}</span><span class="stock-qty">×{{this}}</span></div>{{/each}}
+    </div>
+    {{else}}
+    <p class="pbg-empty">No ingredients in stock. Go harvest some!</p>
+    {{/if}}
+  </div>
+
+{{/if}}
+</div>

@@ -1,0 +1,14 @@
+{
+    "name": "wita",
+    "version": "0.1.0",
+    "description": "Whispers in the Abyss — FoundryVTT Module",
+    "private": true,
+    "scripts": {
+        "build": "node build.js",
+        "watch": "node build.js --watch",
+        "release": "node build.js --release"
+    },
+    "devDependencies": {
+        "esbuild": "^0.20.0"
+    }
+}

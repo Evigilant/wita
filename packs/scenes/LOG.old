@@ -1,0 +1,25 @@
+2026/04/16-14:47:15.511015 7a999b7fe6c0 Recovering log #29
+2026/04/16-14:47:15.514548 7a999b7fe6c0 Delete type=0 #16
+2026/04/16-14:47:15.514563 7a999b7fe6c0 Delete type=2 #13
+2026/04/16-14:47:15.514744 7a999b7fe6c0 Delete type=3 #27
+2026/04/16-14:47:15.514757 7a999b7fe6c0 Delete type=3 #4
+2026/04/16-14:47:15.514767 7a999b7fe6c0 Delete type=2 #9
+2026/04/16-14:47:15.515127 7a999b7fe6c0 Delete type=3 #14
+2026/04/16-14:47:15.515142 7a999b7fe6c0 Delete type=2 #11
+2026/04/16-14:47:15.515626 7a999b7fe6c0 Delete type=0 #12
+2026/04/16-14:47:15.515942 7a999b7fe6c0 Delete type=2 #7
+2026/04/16-14:47:15.516049 7a999b7fe6c0 Delete type=0 #3
+2026/04/16-14:47:15.516056 7a999b7fe6c0 Delete type=3 #2
+2026/04/16-14:47:15.516068 7a999b7fe6c0 Delete type=0 #29
+2026/04/16-14:47:15.516080 7a999b7fe6c0 Delete type=0 #28
+2026/04/16-15:13:20.134646 7a9703fff6c0 Level-0 table #33: started
+2026/04/16-15:13:20.134657 7a9703fff6c0 Level-0 table #33: 0 bytes OK
+2026/04/16-15:13:20.136662 7a9703fff6c0 Delete type=0 #31
+2026/04/16-15:13:20.139272 7a9703fff6c0 Manual compaction at level-0 from '!folders!2dK5kWDTRSkSEUgx' @ 72057594037927935 : 1 .. '!scenes.walls!z4aHXFxVeLV5nRXe.zz8cY714Hu8ilIzP' @ 0 : 0; will stop at (end)
+2026/04/16-15:13:20.144456 7a9703fff6c0 Manual compaction at level-1 from '!folders!2dK5kWDTRSkSEUgx' @ 72057594037927935 : 1 .. '!scenes.walls!z4aHXFxVeLV5nRXe.zz8cY714Hu8ilIzP' @ 0 : 0; will stop at '!scenes.walls!z4aHXFxVeLV5nRXe.zz8cY714Hu8ilIzP' @ 23873 : 1
+2026/04/16-15:13:20.144460 7a9703fff6c0 Compacting 1@1 + 0@2 files
+2026/04/16-15:13:20.147509 7a9703fff6c0 Generated table #34@1: 3615 keys, 265977 bytes
+2026/04/16-15:13:20.147516 7a9703fff6c0 Compacted 1@1 + 0@2 files => 265977 bytes
+2026/04/16-15:13:20.149138 7a9703fff6c0 compacted to: files[ 0 0 6 0 0 0 0 ]
+2026/04/16-15:13:20.149174 7a9703fff6c0 Delete type=2 #21
+2026/04/16-15:13:20.150314 7a9703fff6c0 Manual compaction at level-1 from '!scenes.walls!z4aHXFxVeLV5nRXe.zz8cY714Hu8ilIzP' @ 23873 : 1 .. '!scenes.walls!z4aHXFxVeLV5nRXe.zz8cY714Hu8ilIzP' @ 0 : 0; will stop at (end)

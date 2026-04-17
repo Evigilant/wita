@@ -1,0 +1,158 @@
+{
+    "id": "wita",
+    "title": "Whispers in the Abyss",
+    "description": "Whispers in the Abyss game module, includes journal entries, loot and harvest actions, looting tables, actors, and scenes.",
+    "version": "0.1.0",
+    "manifest": "https://raw.githubusercontent.com/Evigilant/wita/main/module.json",
+    "download": "https://github.com/Evigilant/wita/archive/refs/tags/v0.1.0.zip",
+    "socket": true,
+    "compatibility": {
+        "minimum": "12",
+        "verified": "14"
+    },
+    "authors": [
+        {
+            "name": "evigilant"
+        }
+    ],
+    "styles": [
+        "styles/potion-brewing.css"
+    ],
+    "esmodules": ["src/main.js"],
+    "scripts": [],
+    "dependencies": [
+        {
+            "id": "socketlib",
+            "type": "module"
+        },
+        {
+            "id": "item-piles",
+            "type": "module"
+        },
+        {
+            "id": "financial-system",
+            "type": "module"
+        },
+        {
+            "id": "wgtgm-mini-calendar",
+            "type": "module"
+        },
+        {
+            "id": "campaign-codex",
+            "type": "module"
+        },
+        {
+            "id": "ionrift-respite",
+            "type": "module"
+        },
+        {
+            "id": "potion-crafting-and-gathering",
+            "type": "module"
+        },
+        {
+            "id": "sc-the-cauldron",
+            "type": "module"
+        }
+    ],
+    "packs": [
+        {
+            "name": "wita-actors",
+            "label": "Actors",
+            "path": "packs/actors",
+            "type": "Actor",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-campaign-codex-cc-actors",
+            "label": "Campaign Codex - CC Actors",
+            "path": "packs/campaign-codex-cc-actors",
+            "type": "Actor",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-campaign-codex-cc-items",
+            "label": "Campaign Codex - CC Items",
+            "path": "packs/campaign-codex-cc-items",
+            "type": "Item",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-campaign-codex-cc-journals",
+            "label": "Campaign Codex - CC Journals",
+            "path": "packs/campaign-codex-cc-journals",
+            "type": "JournalEntry",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-features",
+            "label": "Features",
+            "path": "packs/features",
+            "type": "Item",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-harvest-items",
+            "label": "Harvest Items",
+            "path": "packs/harvest-items",
+            "type": "Item",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-harvester",
+            "label": "Harvester",
+            "path": "packs/harvester",
+            "type": "RollTable",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-items",
+            "label": "Items",
+            "path": "packs/items",
+            "type": "Item",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-loot-and-harvest-actions",
+            "label": "Loot & Harvest Actions",
+            "path": "packs/loot-and-harvest-actions",
+            "type": "Item",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-loot-tables",
+            "label": "Loot Tables",
+            "path": "packs/loot-tables",
+            "type": "RollTable",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-loot",
+            "label": "Loot",
+            "path": "packs/loot",
+            "type": "Item",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-macros",
+            "label": "Macros",
+            "path": "packs/macros",
+            "type": "Macro",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-scenes",
+            "label": "Scenes",
+            "path": "packs/scenes",
+            "type": "Scene",
+            "system": "dnd5e"
+        },
+        {
+            "name": "wita-spells",
+            "label": "Spells",
+            "path": "packs/spells",
+            "type": "Item",
+            "system": "dnd5e"
+        }
+    ],
+    "flags": {}
+}

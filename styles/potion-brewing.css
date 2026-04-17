@@ -1,0 +1,392 @@
+/* ============================================================
+   WITA — POTION BREWING & CRAFTING STYLES
+   Theme-aware: uses dnd5e + Carolingian CSS variables
+   ============================================================ */
+
+/* ---------- Window ---------- */
+.app.potion-brewing .window-content {
+    padding: 0;
+    overflow-y: auto;
+    background: var(--dnd5e-background-card, #252830);
+    color: var(--color-form-label, #cfd2da);
+    font-family: var(--font-primary, "Signika", serif);
+}
+
+/* ---------- Main Wrap ---------- */
+.pbg-wrap {
+    padding: 12px;
+    min-height: 300px;
+}
+
+/* ---------- Header Stats Bar ---------- */
+.pbg-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+
+.pbg-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 12px;
+    border-right: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    min-width: 80px;
+}
+.pbg-stat:last-child { border-right: none; }
+
+.pbg-stat-label {
+    font-size: 0.68em;
+    text-transform: uppercase;
+    color: var(--color-form-hint, #8e8e9e);
+    letter-spacing: 0.04em;
+}
+.pbg-stat-value {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--color-highlights, rgb(146,42,96));
+}
+
+.lvl-badge {
+    background: var(--color-highlights, rgb(146,42,96));
+    color: var(--color-light-1, #f7f4f8);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    font-weight: bold;
+}
+
+/* ---------- Kit Tabs ---------- */
+.pbg-kit-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.kit-tab {
+    flex: 1;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    color: var(--color-form-hint, #8e8e9e);
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.15s;
+}
+.kit-tab:hover, .kit-tab.active {
+    background: var(--color-highlights-25, rgba(146,42,96,.25));
+    color: var(--color-highlights, rgb(146,42,96));
+    border-color: var(--color-highlights-50, rgba(146,42,96,.5));
+}
+
+/* ---------- Sections ---------- */
+.pbg-section {
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+.pbg-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.95em;
+    color: var(--color-highlights, rgb(146,42,96));
+    border-bottom: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    padding-bottom: 4px;
+}
+
+/* ---------- Buttons ---------- */
+.pbg-btn {
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 4px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 0.82em;
+    font-family: inherit;
+    transition: all 0.15s;
+    color: var(--color-form-label, #cfd2da);
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+}
+.pbg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pbg-btn-primary {
+    background: var(--color-highlights-75, rgba(146,42,96,.75));
+    color: var(--color-light-1, #f7f4f8);
+    border-color: var(--color-highlights, rgb(146,42,96));
+}
+.pbg-btn-primary:hover:not(:disabled) {
+    background: var(--color-highlights, rgb(146,42,96));
+}
+.pbg-btn-secondary {
+    background: var(--color-level-success-bg, rgba(69,117,73,.8));
+    color: var(--color-level-success, #719f50);
+    border-color: var(--color-level-success, #719f50);
+}
+.pbg-btn-secondary:hover:not(:disabled) {
+    background: var(--color-level-success, #719f50);
+    color: var(--color-light-1, #f7f4f8);
+}
+.pbg-btn-danger {
+    background: var(--color-level-error-bg, rgba(108,39,45,.8));
+    color: var(--color-level-error, #9e4545);
+    border-color: var(--color-level-error-border, #6a2a2c);
+    padding: 2px 8px;
+}
+.pbg-btn-success {
+    background: var(--color-level-success-bg, rgba(69,117,73,.8));
+    color: var(--color-level-success, #719f50);
+    border-color: var(--color-level-success, #719f50);
+    padding: 2px 8px;
+}
+.pbg-btn-sm { font-size: 0.78em; padding: 2px 8px; }
+
+/* ---------- Tables ---------- */
+.pbg-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8em;
+}
+.pbg-table th {
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    color: var(--color-form-hint, #8e8e9e);
+    padding: 4px 6px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    font-weight: 600;
+    font-size: 0.85em;
+    text-transform: uppercase;
+}
+.pbg-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    color: var(--color-form-label, #cfd2da);
+    vertical-align: middle;
+}
+.pbg-table tr:hover td {
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+}
+.pbg-table tr.current-level td {
+    background: var(--color-highlights-15, rgba(146,42,96,.15));
+    color: var(--color-highlights, rgb(146,42,96));
+    font-weight: bold;
+}
+
+.ing-name {
+    color: var(--color-level-info, #799fcb);
+    font-weight: 600;
+    cursor: help;
+}
+.qty-cell { color: var(--color-form-hint, #8e8e9e); font-style: italic; }
+.loc-cell { color: var(--color-level-success, #719f50); font-size: 0.85em; }
+.stock-qty-cell { text-align: center; font-weight: bold; color: var(--color-highlights, rgb(146,42,96)); }
+
+/* ---------- Rarity Tags ---------- */
+.rarity-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.75em;
+    font-weight: bold;
+    text-transform: capitalize;
+}
+.rarity-common    { background: var(--color-level-success-bg, rgba(69,117,73,.8)); color: var(--color-level-success, #719f50); border: 1px solid var(--color-level-success-border, #719f50); }
+.rarity-uncommon  { background: var(--color-level-info-bg, rgba(47,80,132,.8)); color: var(--color-level-info, #799fcb); border: 1px solid var(--color-level-info-border, #5c87b9); }
+.rarity-rare      { background: var(--color-highlights-15, rgba(146,42,96,.15)); color: var(--color-highlights, rgb(146,42,96)); border: 1px solid var(--color-highlights-50, rgba(146,42,96,.5)); }
+.rarity-veryrare, .rarity-veryRare { background: var(--color-highlights-25, rgba(146,42,96,.25)); color: var(--color-highlights, rgb(146,42,96)); border: 1px solid var(--color-highlights-75, rgba(146,42,96,.75)); }
+.rarity-legendary { background: var(--color-level-warning-bg, rgba(141,116,0,.7)); color: var(--color-level-warning, rgb(184,151,4)); border: 1px solid var(--color-level-warning-border, rgba(141,116,0,1)); }
+
+/* Rarity border accents */
+.rarity-border-common   { border-left: 3px solid var(--color-level-success, #719f50) !important; }
+.rarity-border-uncommon { border-left: 3px solid var(--color-level-info, #799fcb) !important; }
+.rarity-border-rare     { border-left: 3px solid var(--color-highlights, rgb(146,42,96)) !important; }
+.rarity-border-veryRare { border-left: 3px solid var(--color-highlights-75, rgba(146,42,96,.75)) !important; }
+
+/* Ingredient row rarity tints */
+.ingredient-row.rarity-common td:first-child    { border-left: 3px solid var(--color-level-success, #719f50); }
+.ingredient-row.rarity-uncommon td:first-child  { border-left: 3px solid var(--color-level-info, #799fcb); }
+.ingredient-row.rarity-rare td:first-child      { border-left: 3px solid var(--color-highlights, rgb(146,42,96)); }
+.ingredient-row.rarity-veryRare td:first-child  { border-left: 3px solid var(--color-highlights-75, rgba(146,42,96,.75)); }
+
+/* ---------- Stock Grid ---------- */
+.pbg-stock-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.pbg-stock-item {
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.82em;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.stock-name { color: var(--color-level-info, #799fcb); }
+.stock-qty  { color: var(--color-highlights, rgb(146,42,96)); font-weight: bold; }
+
+/* ---------- Known Recipes ---------- */
+.pbg-known-recipes { display: flex; flex-wrap: wrap; gap: 4px; }
+.known-recipe-tag {
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 0.77em;
+    color: var(--color-form-hint, #8e8e9e);
+}
+.not-learned-tag {
+    background: var(--color-level-error-bg, rgba(108,39,45,.8));
+    color: var(--color-level-error, #9e4545);
+    border: 1px solid var(--color-level-error-border, #6a2a2c);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75em;
+    font-weight: normal;
+    margin-left: 6px;
+}
+
+/* ---------- Rules Accordion ---------- */
+.pbg-rules {
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.82em;
+}
+.pbg-rules > summary {
+    padding: 7px 12px;
+    cursor: pointer;
+    color: var(--color-form-hint, #8e8e9e);
+    font-weight: 600;
+    user-select: none;
+}
+.pbg-rules > summary:hover { color: var(--color-highlights, rgb(146,42,96)); }
+.pbg-rules-body {
+    padding: 8px 14px;
+    color: var(--color-form-label, #cfd2da);
+    border-top: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+}
+.pbg-rules-body ul { margin: 4px 0 4px 18px; }
+.pbg-rules-body li { margin-bottom: 2px; }
+
+/* ---------- Rows, Inputs ---------- */
+.pbg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.pbg-row label { color: var(--color-form-hint, #8e8e9e); font-size: 0.85em; white-space: nowrap; }
+.pbg-row input, .pbg-row select,
+.gathering-dialog select, .gathering-dialog input {
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 4px;
+    color: var(--color-form-label, #cfd2da);
+    padding: 4px 6px;
+    font-family: inherit;
+    font-size: 0.85em;
+}
+
+/* ---------- Recipe Detail ---------- */
+.pbg-recipe-detail { border-left-width: 3px !important; }
+.recipe-desc {
+    color: var(--color-form-hint, #8e8e9e);
+    font-style: italic;
+    font-size: 0.85em;
+    margin-bottom: 8px;
+}
+.pbg-recipe-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    font-size: 0.82em;
+    color: var(--color-form-hint, #8e8e9e);
+    margin-bottom: 8px;
+}
+.pbg-recipe-stats div strong { color: var(--color-form-label, #cfd2da); }
+.pbg-ingredients-required { font-size: 0.82em; margin-bottom: 10px; }
+.pbg-ingredients-required ul { margin: 4px 0 0 18px; color: var(--color-level-info, #799fcb); }
+.pbg-brew-actions { display: flex; gap: 8px; }
+
+/* ---------- Empty States ---------- */
+.pbg-empty, .pbg-empty-state {
+    color: var(--color-form-hint, #8e8e9e);
+    font-style: italic;
+    font-size: 0.85em;
+    text-align: center;
+    padding: 10px;
+}
+
+/* ---------- Craft Level Sheet Hero ---------- */
+.pbg-level-hero {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+.pbg-level-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: var(--color-highlights-75, rgba(146,42,96,.75));
+    border: 2px solid var(--color-highlights, rgb(146,42,96));
+    flex-shrink: 0;
+}
+.lvl-number {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--color-light-1, #f7f4f8);
+    line-height: 1;
+}
+.lvl-label {
+    font-size: 0.5em;
+    color: var(--color-light-3, #dcdce8);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.pbg-level-info h2 {
+    margin: 0 0 4px 0;
+    color: var(--color-highlights, rgb(146,42,96));
+    font-size: 1.1em;
+}
+.pbg-level-info p { margin: 2px 0; font-size: 0.85em; color: var(--color-form-label, #cfd2da); }
+
+/* Progress bar */
+.pbg-progress-bar {
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+    margin: 4px 0 2px 0;
+    width: 200px;
+}
+.pbg-progress-fill {
+    height: 100%;
+    background: var(--color-highlights, rgb(146,42,96));
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+.pbg-progress-label {
+    font-size: 0.75em !important;
+    color: var(--color-form-hint, #8e8e9e) !important;
+}
+
+/* ---------- Nature Check Section ---------- */
+.pbg-nature-check { display: flex; flex-direction: column; gap: 6px; }

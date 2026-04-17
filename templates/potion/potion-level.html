@@ -1,0 +1,90 @@
+{{!-- Craft Level Sheet --}}
+<div class="pbg-wrap">
+  <div class="pbg-level-hero">
+    <div class="pbg-level-circle">
+      <span class="lvl-number">{{level}}</span>
+      <span class="lvl-label">PM LEVEL</span>
+    </div>
+    <div class="pbg-level-info">
+      <h2>{{actor.name}}</h2>
+      <p>Crafting Bonus: <strong>+{{bonus}}</strong> &nbsp;|&nbsp; Total EXP: <strong>{{exp}}</strong></p>
+      {{#if nextLevelExp}}
+      <p>Next level: <strong>{{nextLevelExp}} EXP</strong></p>
+      <div class="pbg-progress-bar"><div class="pbg-progress-fill" style="width:{{progress}}%"></div></div>
+      <p class="pbg-progress-label">{{progress}}% to level {{add level 1}}</p>
+      {{else}}<p>🏆 <strong>Maximum Level!</strong></p>{{/if}}
+    </div>
+  </div>
+
+  <details class="pbg-rules" open>
+    <summary>📊 Level Table</summary>
+    <table class="pbg-table">
+      <thead><tr><th>Level</th><th>EXP</th><th>Bonus</th></tr></thead>
+      <tbody>
+        {{#each levelTable}}
+        <tr {{#if (eq ../level level)}}class="current-level"{{/if}}>
+          <td>{{level}}</td><td>{{exp}}</td><td>+{{bonus}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </details>
+
+  <details class="pbg-rules">
+    <summary>🌟 EXP Awards</summary>
+    <table class="pbg-table">
+      <thead><tr><th>Activity</th><th>Common</th><th>Uncommon</th><th>Rare</th><th>V. Rare</th></tr></thead>
+      <tbody>
+        <tr><td>Identify (per herb)</td><td>5</td><td>10</td><td>20</td><td>—</td></tr>
+        <tr><td>Gather (per unit)</td><td>2</td><td>8</td><td>12</td><td>20</td></tr>
+        <tr><td>Craft Potion</td><td>80</td><td>200</td><td>750</td><td>2000</td></tr>
+        <tr><td>Learn Recipe</td><td>60</td><td>150</td><td>500</td><td>1500</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  {{#if isGM}}
+  <div class="pbg-section">
+    <h3>🎲 GM: Award EXP</h3>
+    <div class="pbg-row">
+      <input type="number" id="manual-exp" placeholder="Amount" min="1" style="width:100px">
+      <button class="btn-add-exp pbg-btn pbg-btn-secondary">Award</button>
+    </div>
+  </div>
+  {{/if}}
+
+  <div class="pbg-section">
+    <h3>🎒 Ingredient Stock ({{stockEntries.length}} types)</h3>
+    {{#if stockEntries.length}}
+    <table class="pbg-table pbg-stock-table">
+      <thead><tr><th>Ingredient</th><th>Qty</th><th>±</th></tr></thead>
+      <tbody>
+        {{#each stockEntries}}
+        <tr>
+          <td>{{this.[0]}}</td>
+          <td style="text-align:center;color:#e8c87a;font-weight:bold">{{this.[1]}}</td>
+          <td>
+            <button class="btn-remove-ingredient pbg-btn pbg-btn-sm pbg-btn-danger" data-name="{{this.[0]}}">−</button>
+            <button class="btn-add-ingredient pbg-btn pbg-btn-sm pbg-btn-success" data-name="{{this.[0]}}">+</button>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    {{else}}<p class="pbg-empty">No ingredients in stock.</p>{{/if}}
+    <div class="pbg-row" style="margin-top:8px">
+      <input type="text" id="stock-name" placeholder="Ingredient name" style="flex:1">
+      <input type="number" id="stock-qty" value="1" min="1" style="width:55px">
+      <button class="btn-add-stock pbg-btn pbg-btn-secondary">Add</button>
+    </div>
+  </div>
+
+  <div class="pbg-section">
+    <h3>📋 Known Recipes ({{knownRecipes.length}})</h3>
+    {{#if knownRecipes.length}}
+    <div class="pbg-known-recipes">
+      {{#each knownRecipes}}<span class="known-recipe-tag">{{this}}</span>{{/each}}
+    </div>
+    {{else}}<p class="pbg-empty">No recipes learned yet.</p>{{/if}}
+  </div>
+</div>

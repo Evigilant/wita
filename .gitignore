@@ -1,0 +1,24 @@
+# Build output
+dist/
+*.zip
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment / secrets
+*.env
+.env*
+
+# Foundry data (never commit world data)
+*.db
+*.db-journal
