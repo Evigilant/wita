@@ -1,6 +1,6 @@
 // ============================================================
 // WITA — CRAFT LEVEL SHEET
-// Shows per-actor Craft EXP, level, stock, and recipe knowledge.
+// Shows per-actor Craft EXP, level, and progression.
 // ============================================================
 import {
     WITA_POTION_CRAFTING,
@@ -31,12 +31,8 @@ export class WITAPotionLevelSheet extends Application {
         const actor = this.actor;
         const { exp, level, bonus, next: nextLevelExp, curExp: curLevelExp, pct: progress } =
             WITA_POTION_CRAFTING.getState(actor);
-        const knownRecipes = WITA_POTION_CRAFTING.getKnownRecipes(actor);
-        const stock        = WITA_POTION_CRAFTING.getStock(actor);
-        const stockEntries = Object.entries(stock).sort((a, b) => a[0].localeCompare(b[0]));
         return {
             actor, exp, level, bonus, nextLevelExp, curLevelExp, progress,
-            knownRecipes, stockEntries,
             levelTable: WITA_POTION_MAKING_LEVELS,
             expTable:   WITA_POTION_EXP_TABLE,
             isGM:       game.user.isGM,
@@ -46,26 +42,37 @@ export class WITAPotionLevelSheet extends Application {
     // TODO(v14): activateListeners receives HTMLElement in v14, not jQuery
     activateListeners(html) {
         super.activateListeners(html);
+
+        html.find(".btn-sc-recipes").on("click", () => this._openRecipes());
+
         html.find(".btn-add-exp").on("click", async () => {
             const amount = parseInt(html.find("#manual-exp").val()) || 0;
             if (amount <= 0) return;
             await WITA_POTION_CRAFTING.awardExp(this.actor, amount, "manual GM award");
             this.render();
         });
-        html.find(".btn-remove-ingredient").on("click", async e => {
-            await WITA_POTION_CRAFTING.removeIngredient(this.actor, $(e.currentTarget).data("name"), 1);
+
+        html.find(".btn-reset-craft").on("click", async () => {
+            const confirmed = await Dialog.confirm({
+                title: "Reset Craft XP & Level",
+                content: `<p>Reset <strong>${this.actor.name}</strong>'s Craft EXP to 0 and return them to Level 1?</p>
+                    <p style="color:var(--color-level-error,#e07575)">This cannot be undone.</p>`,
+            });
+            if (!confirmed) return;
+            await WITA_POTION_CRAFTING.setExp(this.actor, 0);
             this.render();
         });
-        html.find(".btn-add-ingredient").on("click", async e => {
-            await WITA_POTION_CRAFTING.addIngredient(this.actor, $(e.currentTarget).data("name"), 1);
-            this.render();
-        });
-        html.find(".btn-add-stock").on("click", async () => {
-            const name = html.find("#stock-name").val()?.trim();
-            const qty  = parseInt(html.find("#stock-qty").val()) || 1;
-            if (!name) return ui.notifications.warn("Enter an ingredient name.");
-            await WITA_POTION_CRAFTING.addIngredient(this.actor, name, qty);
-            this.render();
-        });
+    }
+
+    _openRecipes() {
+        const sheet = this.actor.sheet;
+        if (sheet?.rendered) {
+            const root = sheet.element instanceof HTMLElement ? sheet.element : sheet.element?.[0];
+            const cauldronBtns = Array.from(
+                root?.querySelectorAll?.("button i.fa-cauldron, button i.fa-solid.fa-cauldron, [data-action] i.fa-cauldron") ?? []
+            ).map(i => i.closest("button") ?? i.closest("[data-action]")).filter(Boolean);
+            if (cauldronBtns.length) { cauldronBtns[0].click(); return; }
+        }
+        game.modules.get("sc-the-cauldron")?.api?.openCauldronForDocument(this.actor);
     }
 }

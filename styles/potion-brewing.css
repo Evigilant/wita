@@ -65,6 +65,39 @@
     font-weight: bold;
 }
 
+/* ---------- Action Row ---------- */
+.pbg-action-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.pbg-action-row .pbg-btn {
+    flex: 1;
+    font-size: 1em;
+    padding: 8px 12px;
+}
+
+/* ---------- Stock Details ---------- */
+.pbg-stock-details {
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+.pbg-stock-summary {
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--color-form-label, #cfd2da);
+    list-style: none;
+    user-select: none;
+}
+.pbg-stock-summary:hover { color: var(--color-highlights, rgb(146,42,96)); }
+.pbg-stock-count { color: var(--color-form-hint, #8e8e9e); font-weight: normal; font-size: 0.88em; }
+.pbg-stock-details .pbg-stock-grid { padding: 6px 10px 10px; }
+.pbg-stock-details[open] .pbg-stock-summary { border-bottom: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25)); }
+
 /* ---------- Kit Tabs ---------- */
 .pbg-kit-tabs {
     display: flex;
@@ -222,14 +255,28 @@
     background: var(--color-cool-5-50, rgba(11,10,19,.5));
     border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
     border-radius: 4px;
-    padding: 3px 8px;
+    padding: 3px 8px 3px 4px;
     font-size: 0.82em;
     display: flex;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
+    cursor: grab;
+}
+.pbg-stock-item:hover {
+    border-color: var(--color-highlights-50, rgba(146,42,96,.5));
+    background: var(--color-cool-5-75, rgba(11,10,19,.75));
+}
+.pbg-stock-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+    object-fit: cover;
+    flex-shrink: 0;
 }
 .stock-name { color: var(--color-level-info, #799fcb); }
 .stock-qty  { color: var(--color-highlights, rgb(146,42,96)); font-weight: bold; }
+.pbg-stock-legacy { opacity: 0.65; cursor: default; }
+.pbg-stock-legacy .stock-name { color: var(--color-form-hint, #8e8e9e); }
 
 /* ---------- Known Recipes ---------- */
 .pbg-known-recipes { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -314,7 +361,25 @@
 .pbg-recipe-stats div strong { color: var(--color-form-label, #cfd2da); }
 .pbg-ingredients-required { font-size: 0.82em; margin-bottom: 10px; }
 .pbg-ingredients-required ul { margin: 4px 0 0 18px; color: var(--color-level-info, #799fcb); }
-.pbg-brew-actions { display: flex; gap: 8px; }
+.pbg-ing-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.pbg-ing-entry {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 4px; padding: 3px 8px 3px 4px; font-size: 0.82em;
+}
+.pbg-ing-entry.ing-inspect { cursor: pointer; }
+.pbg-ing-entry.ing-inspect:hover { border-color: var(--color-highlights-50, rgba(146,42,96,.5)); color: var(--color-highlights, rgb(146,42,96)); }
+.pbg-ing-entry.ing-missing { border-color: var(--color-level-error, #e07575); }
+.ing-stock-badge {
+    margin-left: 4px;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--color-level-success, #6dca6d);
+}
+.ing-stock-badge.lacking { color: var(--color-level-error, #e07575); }
+.pbg-brew-actions { display: flex; align-items: center; gap: 8px; }
+.pbg-craft-blocked { font-size: 0.82em; color: var(--color-level-error, #e07575); }
 
 /* ---------- Empty States ---------- */
 .pbg-empty, .pbg-empty-state {
@@ -390,3 +455,85 @@
 
 /* ---------- Nature Check Section ---------- */
 .pbg-nature-check { display: flex; flex-direction: column; gap: 6px; }
+.pbg-nature-check-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.nature-check-uses {
+    font-size: 0.82em;
+    color: var(--color-form-hint, #8e8e9e);
+    white-space: nowrap;
+}
+.nature-check-uses.exhausted {
+    color: var(--color-level-error, #e07575);
+    font-weight: 600;
+}
+.pbg-env-label {
+    margin: 6px 0 0;
+    font-size: 0.85em;
+    color: var(--color-form-hint, #8e8e9e);
+}
+.pbg-env-label strong { color: var(--color-highlights, cornflowerblue); }
+
+/* ---------- Harvest Controls ---------- */
+.pbg-harvest-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 10px;
+    padding: 0 6px;
+    flex-wrap: wrap;
+}
+.pbg-harvest-controls .pbg-row {
+    margin: 0;
+    flex: 1;
+    min-width: 180px;
+}
+
+/* ---------- Collapsible Ingredients ---------- */
+.pbg-ingredients-details {
+    border: 1px solid var(--color-fieldset-border, rgba(20,23,26,.25));
+    border-radius: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.pbg-ingredients-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    list-style: none;
+    user-select: none;
+}
+.pbg-ingredients-summary::-webkit-details-marker { display: none; }
+.pbg-ingredients-summary::before {
+    content: "▶";
+    font-size: 0.7em;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+}
+.pbg-ingredients-details[open] .pbg-ingredients-summary::before { transform: rotate(90deg); }
+.harvest-slots-badge {
+    margin-left: auto;
+    font-size: 0.82em;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--color-cool-5-25, rgba(11,10,19,.25));
+    color: var(--color-highlights, cornflowerblue);
+    border: 1px solid currentColor;
+}
+.harvest-slots-badge.locked {
+    color: var(--color-form-hint, #8e8e9e);
+    border-color: var(--color-form-hint, #8e8e9e);
+    font-weight: normal;
+}
+
+/* ---------- Ingredient checkboxes ---------- */
+.ing-checkbox {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: var(--color-highlights, cornflowerblue);
+}
+.ing-checkbox:disabled { cursor: not-allowed; opacity: 0.4; }

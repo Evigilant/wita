@@ -16,6 +16,10 @@
     <div class="pbg-stat"><span class="pbg-stat-label">Craft Roll</span><span class="pbg-stat-value">1d20+{{add bonus profBonus}}</span></div>
   </div>
 
+  <div class="pbg-action-row">
+    <button class="btn-sc-recipes pbg-btn pbg-btn-secondary">📖 Known Recipes</button>
+  </div>
+
   <div class="pbg-kit-tabs">
     <button class="kit-tab {{#if (eq selectedKit 'alchemist')}}active{{/if}}" data-kit="alchemist">⚗️ Alchemist's Supplies</button>
     <button class="kit-tab {{#if (eq selectedKit 'herbalism')}}active{{/if}}" data-kit="herbalism">🌿 Herbalism Kit</button>
@@ -29,7 +33,7 @@
         <option value="">— Choose a recipe —</option>
         {{#each allRecipes}}
         <option value="{{name}}" class="rarity-{{rarity}}">
-          {{name}} [{{rarity}}]{{#unless (includes ../knownRecipes name)}} ⚠️{{/unless}}
+          {{name}} [{{rarity}}]
         </option>
         {{/each}}
       </select>
@@ -39,13 +43,8 @@
   {{#if selectedRecipe}}
   <div class="pbg-section pbg-recipe-detail rarity-border-{{selectedRecipe.rarity}}">
     <h3>
-      <span class="recipe-result-link" data-uuid="{{selectedRecipe.uuid}}" style="cursor:pointer;color:#c8a8e8">
-        {{selectedRecipe.name}}
-      </span>
       <span class="rarity-tag rarity-{{selectedRecipe.rarity}}">{{selectedRecipe.rarity}}</span>
-      {{#unless (includes knownRecipes selectedRecipe.name)}}
-        <span class="not-learned-tag">⚠️ Not yet learned</span>
-      {{/unless}}
+      {{selectedRecipe.name}}
     </h3>
     <div class="pbg-recipe-stats">
       <div><strong>DC:</strong> {{selectedRecipe.dc}}</div>
@@ -53,57 +52,43 @@
       <div><strong>Base cost:</strong> {{selectedRecipe.baseCost}} gp</div>
       <div><strong>Value:</strong> {{selectedRecipe.value}} gp</div>
     </div>
-    <div style="font-size:0.82em;margin-bottom:8px">
+    <div class="pbg-ingredients-required">
       <strong>Ingredients:</strong>
-      {{#each selectedRecipe.ingredients}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+      <div class="pbg-ing-list">
+        {{#each selectedRecipe.ingredientDetails}}
+        <div class="pbg-ing-entry {{#if uuid}}ing-inspect{{/if}} {{#if missing}}ing-missing{{/if}}"
+             {{#if uuid}}data-uuid="{{uuid}}"{{/if}}
+             data-tooltip="{{#if missing}}Missing {{missing}}×{{else}}In bag: {{have}}×{{/if}}{{#if uuid}} — Click to inspect{{/if}}">
+          <img src="{{img}}" alt="{{name}}" class="pbg-stock-icon">
+          <span>{{name}} ×{{qty}}</span>
+          <span class="ing-stock-badge {{#if missing}}lacking{{/if}}">{{have}}/{{qty}}</span>
+        </div>
+        {{/each}}
+      </div>
     </div>
     <div class="pbg-brew-actions">
-      {{#unless (includes knownRecipes selectedRecipe.name)}}
-      <button class="btn-learn-recipe pbg-btn pbg-btn-secondary">📜 Learn Recipe</button>
-      {{/unless}}
-      <button class="btn-brew pbg-btn pbg-btn-primary"
-        {{#unless (includes knownRecipes selectedRecipe.name)}}disabled{{/unless}}>
-        ⚗️ Brew
-      </button>
+      <button class="btn-brew pbg-btn pbg-btn-primary" {{#unless selectedRecipe.canCraft}}disabled{{/unless}}>⚗️ Attempt Craft</button>
+      {{#unless selectedRecipe.canCraft}}<span class="pbg-craft-blocked">Missing ingredients</span>{{/unless}}
     </div>
   </div>
   {{else}}
   <div class="pbg-empty-state"><p>Select a recipe above to get started.</p></div>
   {{/if}}
 
-  <details class="pbg-rules">
-    <summary>📖 Crafting Rules</summary>
-    <div class="pbg-rules-body">
-      <table class="pbg-table">
-        <thead><tr><th>Rarity</th><th>DC</th><th>Hours</th><th>Cost</th><th>Value</th></tr></thead>
-        <tbody>
-          <tr><td>Common</td><td>8</td><td>8</td><td>25 gp</td><td>50 gp</td></tr>
-          <tr><td>Uncommon</td><td>12</td><td>24</td><td>100 gp</td><td>200 gp</td></tr>
-          <tr><td>Rare</td><td>15</td><td>80</td><td>500 gp</td><td>1,000 gp</td></tr>
-          <tr><td>Very Rare</td><td>18</td><td>240</td><td>1,000 gp</td><td>2,000 gp</td></tr>
-        </tbody>
-      </table>
-      <p><em>Roll: 1d20 + proficiency + Craft Level. On fail: ingredients returned, gold lost.</em></p>
-    </div>
-  </details>
-
-  <div class="pbg-section">
-    <h3>🎒 Ingredient Stock</h3>
-    {{#if stock}}
+  <details class="pbg-stock-details" {{#if hasStock}}open{{/if}}>
+    <summary class="pbg-stock-summary">🎒 Ingredient Stock <span class="pbg-stock-count">({{stockCount}} items)</span></summary>
     <div class="pbg-stock-grid">
-      {{#each stock}}<div class="pbg-stock-item"><span class="stock-name">{{@key}}</span><span class="stock-qty">×{{this}}</span></div>{{/each}}
-    </div>
-    {{else}}<p class="pbg-empty">No ingredients. Use Gather to harvest some.</p>{{/if}}
-  </div>
-
-  <details class="pbg-rules">
-    <summary>📋 Known Recipes ({{knownRecipes.length}})</summary>
-    <div class="pbg-rules-body">
-      {{#if knownRecipes.length}}
-      <div class="pbg-known-recipes">
-        {{#each knownRecipes}}<span class="known-recipe-tag">{{this}}</span>{{/each}}
-      </div>
-      {{else}}<p class="pbg-empty">No recipes learned yet.</p>{{/if}}
+      {{#if stockItems.length}}
+        {{#each stockItems}}
+        <div class="pbg-stock-item" draggable="true" data-uuid="{{uuid}}" data-tooltip="{{name}} ×{{quantity}} — drag to SC Cauldron">
+          <img src="{{img}}" alt="{{name}}" class="pbg-stock-icon">
+          <span class="stock-name">{{name}}</span>
+          <span class="stock-qty">×{{quantity}}</span>
+        </div>
+        {{/each}}
+      {{else}}
+        <p class="pbg-empty">No ingredients in inventory. Use Gather to harvest some.</p>
+      {{/if}}
     </div>
   </details>
 
