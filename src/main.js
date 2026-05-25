@@ -23,6 +23,21 @@ import { executeLootAndHarvest } from "./loot/loot.js";
 // ── Bastion (registers dnd5e.restCompleted hook as side effect)
 import "./bastion/bastion-state.js";
 
+// 1. Imports (add to existing import block):
+import { registerBastionPanel }         from "./bastion/bastion-panel.js";
+import { handleEngineerPurchase,
+         openCustomFacilityDialog }     from "./bastion/bastion-engineer.js";
+
+// 2. Inside Hooks.once("init"):
+registerBastionPanel();
+
+// 3. Inside Hooks.once("ready"), extend game.wita.bastion API:
+game.wita          = game.wita          ?? {};
+game.wita.bastion  = game.wita.bastion  ?? {};
+game.wita.bastion.handleEngineerPurchase  = handleEngineerPurchase;
+game.wita.bastion.openCustomFacilityDialog = openCustomFacilityDialog;
+
+
 // ── Combat log (registers all combat hooks as side effect) ────
 import "./combat/combat-log.js";
 
