@@ -79,4 +79,8 @@ export function rollEquipmentFate(cr) {
     return { result: "intact", roll };
 }
 
+export function witaSetting(key) {
+   return game.settings.get("wita", key);
+}
+
 console.log("WITA | Utils loaded.");

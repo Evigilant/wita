@@ -1,293 +1,541 @@
 /* ============================================================
-   WITA — BASTION PANEL v2
-   All Carolingian / dnd5e CSS variables — theme-aware.
+   WITA — BASTION PANEL
+   Uses Carolingian UI CSS variables exclusively.
+   No hardcoded light/dark fallbacks.
    ============================================================ */
 
-/* ── Sidebar icon ─────────────────────────────────────────── */
-#sidebar-tabs [data-tab="wita-bastion"] i { font-size: 1rem; }
-
-/* ── Panel shell ─────────────────────────────────────────── */
-.wita-panel-inner {
-    display: flex; flex-direction: column; height: 100%;
-    font-family: var(--font-primary, "Signika");
-    color: var(--color-text-primary, #191813);
+/* ── Window content ───────────────────────────────────────── */
+.wita-bastion-panel .window-content {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
-/* ── Header ──────────────────────────────────────────────── */
+/* ── Panel inner ──────────────────────────────────────────── */
+.wita-panel-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    color: var(--color-text-primary);
+    font-family: var(--font-primary, "Signika");
+}
+
+/* ── Header ───────────────────────────────────────────────── */
 .wita-panel-header {
-    display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.45rem 0.75rem;
-    border-bottom: 1px solid var(--color-fieldset-border, #9f9275);
-    background: var(--color-cool-5-75, rgba(0,0,0,0.06));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--color-fieldset-border);
     flex-shrink: 0;
 }
 .wita-tier-badge { font-size: 1.1rem; }
 .wita-panel-header h2 {
     flex: 1; margin: 0; font-size: 0.88rem; font-weight: 700;
-    color: var(--color-highlights, #7a3f00);
+    color: var(--color-highlights);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.wita-panel-header .wita-slot-controls {
+    display: flex; align-items: center; gap: 0.25rem;
+    font-size: 0.75rem; color: var(--color-form-hint);
+}
+.wita-panel-header .wita-slot-controls button {
+    width: 1.4rem; height: 1.4rem; padding: 0; font-size: 0.8rem; line-height: 1;
+    border: 1px solid var(--color-fieldset-border); background: transparent;
+    cursor: pointer; border-radius: 2px; color: var(--color-form-label);
+}
+.wita-panel-header .wita-slot-controls button:hover {
+    background: var(--color-highlights); color: #fff;
+}
 
-/* ── Tab strip ───────────────────────────────────────────── */
+/* ── Tab strip ────────────────────────────────────────────── */
 .wita-tabs {
     display: flex;
-    border-bottom: 2px solid var(--color-fieldset-border, #9f9275);
-    background: var(--color-cool-5-75, rgba(0,0,0,0.04));
+    border-bottom: 2px solid var(--color-fieldset-border);
     flex-shrink: 0;
 }
 .wita-tab-btn {
-    flex: 1; padding: 0.3rem 0.15rem;
+    flex: 1; padding: 0.3rem 0.1rem;
     font-size: 0.62rem; font-weight: 600; text-align: center;
     border: none; border-bottom: 2px solid transparent; margin-bottom: -2px;
     background: transparent; cursor: pointer;
-    color: var(--color-form-label, #555);
+    color: var(--color-form-hint);
     text-transform: uppercase; letter-spacing: 0.03em;
     transition: color 0.15s, border-color 0.15s;
 }
-.wita-tab-btn:hover       { color: var(--color-highlights, #7a3f00); }
-.wita-tab-btn.active      { color: var(--color-highlights, #7a3f00); border-bottom-color: var(--color-highlights, #7a3f00); }
+.wita-tab-btn:hover  { color: var(--color-highlights); }
+.wita-tab-btn.active { color: var(--color-highlights); border-bottom-color: var(--color-highlights); }
 
-/* ── Body / tab panes ────────────────────────────────────── */
-.wita-panel-body   { flex: 1; overflow-y: auto; padding: 0.5rem; scrollbar-width: thin; }
-.wita-tab-content  { display: none; }
+/* ── Body / tab panes ─────────────────────────────────────── */
+.wita-panel-body         { flex: 1; overflow-y: auto; padding: 0.5rem; scrollbar-width: thin; }
+.wita-tab-content        { display: none; }
 .wita-tab-content.active { display: block; }
 
-/* ── Shared ──────────────────────────────────────────────── */
+/* ── Shared ───────────────────────────────────────────────── */
 .wita-section-label {
     font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.05em; color: var(--color-form-hint, #888);
+    letter-spacing: 0.05em; color: var(--color-form-hint);
     margin: 0.65rem 0 0.2rem; padding-bottom: 0.15rem;
-    border-bottom: 1px solid var(--color-fieldset-border, #ccc);
+    border-bottom: 1px solid var(--color-fieldset-border);
 }
 .wita-section-label:first-child { margin-top: 0; }
 
 .wita-empty {
     text-align: center; padding: 1.2rem 0.5rem;
-    color: var(--color-form-hint, #aaa); font-size: 0.72rem; font-style: italic;
+    color: var(--color-form-hint); font-size: 0.72rem; font-style: italic;
 }
 
-.wita-badge {
-    display: inline-block; padding: 0.1rem 0.45rem;
-    border-radius: 3px; font-size: 0.7rem; font-weight: 600;
-    background: var(--color-cool-5-75, rgba(0,0,0,0.07));
-    border: 1px solid var(--color-fieldset-border, #ccc);
+/* ── Stat grid ────────────────────────────────────────────── */
+.wita-stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+    gap: 0.35rem; margin-bottom: 0.35rem;
+}
+.wita-stat-card {
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 4px; padding: 0.3rem 0.2rem;
+    text-align: center;
+}
+.wita-stat-value { font-size: 1rem; font-weight: 700; color: var(--color-highlights); line-height: 1.2; }
+.wita-stat-label { font-size: 0.55rem; color: var(--color-form-hint); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.1rem; }
+
+/* ── Progress bar ─────────────────────────────────────────── */
+.wita-progress-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.wita-progress-bar-wrap { flex: 1; height: 6px; background: var(--color-fieldset-border); border-radius: 3px; overflow: hidden; }
+.wita-progress-bar { height: 100%; background: var(--color-highlights); border-radius: 3px; transition: width 0.3s; }
+.wita-progress-label { font-size: 0.65rem; color: var(--color-form-hint); white-space: nowrap; }
+
+/* ── Fluctuation badge ────────────────────────────────────── */
+.wita-fluctuation-badge {
+    display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px;
+    font-size: 0.7rem; font-weight: 700;
+    background: var(--color-highlights-15); color: var(--color-highlights);
+    border: 1px solid var(--color-highlights);
 }
 
+/* ── Buttons ──────────────────────────────────────────────── */
+.wita-btn-row { display: flex; gap: 0.35rem; flex-wrap: wrap; margin: 0.35rem 0; }
 .wita-btn {
-    display: inline-flex; align-items: center; gap: 0.3rem;
-    padding: 0.3rem 0.65rem; font-size: 0.72rem; font-weight: 600;
-    border: 1px solid var(--color-fieldset-border, #9f9275);
-    border-radius: 3px; background: var(--color-cool-5-75, rgba(0,0,0,0.04));
-    cursor: pointer; color: var(--color-text-primary, #191813);
-    transition: background 0.12s;
+    flex: 1; padding: 0.3rem 0.5rem; font-size: 0.72rem; font-weight: 600;
+    border: 1px solid var(--color-fieldset-border); border-radius: 3px;
+    background: transparent; color: var(--color-form-label);
+    cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s;
+    white-space: nowrap;
 }
-.wita-btn:hover         { background: var(--color-highlights, #7a3f00); color: #fff; border-color: var(--color-highlights, #7a3f00); }
-.wita-btn.danger:hover  { background: #c0392b; border-color: #c0392b; color: #fff; }
-
-.wita-btn-row { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.wita-btn:hover {
+    background: var(--color-highlights-15); color: var(--color-highlights);
+    border-color: var(--color-highlights);
+}
+.wita-btn.danger:hover { background: rgba(158,69,69,0.18); color: var(--color-level-error); border-color: var(--color-level-error); }
+.wita-btn.active { background: var(--color-highlights-25); color: var(--color-highlights); border-color: var(--color-highlights); }
 
 .wita-icon-btn {
-    width: 1.35rem; height: 1.35rem; padding: 0; font-size: 0.68rem;
-    border: 1px solid var(--color-fieldset-border, #ccc); border-radius: 2px;
-    background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    color: var(--color-form-hint, #888);
+    padding: 0.15rem 0.35rem; font-size: 0.68rem;
+    border: 1px solid var(--color-fieldset-border); border-radius: 3px;
+    background: transparent; color: var(--color-form-hint);
+    cursor: pointer; transition: background 0.12s, color 0.12s;
 }
-.wita-icon-btn:hover        { background: var(--color-highlights, #7a3f00); color: #fff; border-color: var(--color-highlights, #7a3f00); }
-.wita-icon-btn.danger:hover { background: #c0392b; border-color: #c0392b; color: #fff; }
+.wita-icon-btn:hover { color: var(--color-highlights); border-color: var(--color-highlights); background: var(--color-highlights-15); }
+.wita-icon-btn.danger:hover { color: var(--color-level-error); border-color: var(--color-level-error); background: rgba(158,69,69,0.15); }
 
-/* ── Status tab ──────────────────────────────────────────── */
-.wita-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.5rem; }
-.wita-stat-card {
-    background: var(--color-cool-5-75, rgba(0,0,0,0.04));
-    border: 1px solid var(--color-fieldset-border, #ccc);
-    border-radius: 4px; padding: 0.35rem 0.5rem; text-align: center;
-}
-.wita-stat-value { font-size: 1.2rem; font-weight: 700; color: var(--color-highlights, #7a3f00); line-height: 1.1; }
-.wita-stat-label { font-size: 0.6rem; color: var(--color-form-hint, #888); text-transform: uppercase; letter-spacing: 0.04em; }
-
-.wita-progress-row   { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-.wita-progress-bar-wrap {
-    flex: 1; height: 9px;
-    background: var(--color-cool-5-75, rgba(0,0,0,0.1));
-    border-radius: 5px; overflow: hidden;
-    border: 1px solid var(--color-fieldset-border, #ccc);
-}
-.wita-progress-bar { height: 100%; background: var(--color-highlights, #7a3f00); border-radius: 5px; transition: width 0.3s; }
-.wita-progress-label { font-size: 0.68rem; color: var(--color-form-hint, #888); white-space: nowrap; }
-
-/* ── Facility slots ──────────────────────────────────────── */
-.wita-slot-pool-controls {
-    display: flex; align-items: center; gap: 0.3rem;
-    font-size: 0.7rem; margin-bottom: 0.5rem; flex-wrap: wrap;
-}
-.wita-pool-label { font-weight: 600; color: var(--color-form-label, #555); }
-.wita-pool-btn {
-    width: 1.3rem; height: 1.3rem; padding: 0; font-size: 0.8rem; font-weight: 700;
-    border: 1px solid var(--color-fieldset-border, #9f9275); border-radius: 2px;
-    background: transparent; cursor: pointer;
-}
-.wita-pool-btn:hover { background: var(--color-highlights, #7a3f00); color: #fff; border-color: var(--color-highlights, #7a3f00); }
-
-.wita-slots-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+/* ── Facility slot cards ──────────────────────────────────── */
+.wita-slots-grid { display: flex; flex-direction: column; gap: 0.25rem; }
 
 .wita-slot {
-    border: 1px solid var(--color-fieldset-border, #9f9275);
-    border-radius: 4px;
-    background: var(--color-cool-5-75, rgba(0,0,0,0.02));
-    transition: border-color 0.12s;
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 4px; overflow: hidden;
 }
-.wita-slot.empty { opacity: 0.65; }
-.wita-slot.drag-over {
-    border-color: var(--color-highlights, #7a3f00);
-    background: rgba(122,63,0,0.06);
-}
+.wita-slot.empty { border-style: dashed; opacity: 0.7; }
 
-.wita-slot-header {
-    display: flex; align-items: center; gap: 0.35rem;
+/* Compact single-row card */
+.wita-slot-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.3rem 0.5rem;
-    background: var(--color-cool-5-75, rgba(0,0,0,0.05));
-    border-bottom: 1px solid var(--color-fieldset-border, #eee);
-    cursor: pointer; user-select: none;
+    cursor: pointer;
+    transition: background 0.1s;
 }
-.wita-slot-empty-header { cursor: default; border-bottom: none; }
-.wita-slot-img { width: 22px; height: 22px; border-radius: 3px; object-fit: cover; flex-shrink: 0; }
-.wita-slot-name { flex: 1; font-size: 0.75rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wita-slot-productivity { font-size: 0.68rem; font-weight: 700; color: var(--color-highlights, #7a3f00); }
-.wita-health-badge { font-size: 0.75rem; }
+.wita-slot-compact:hover { background: var(--color-highlights-15); }
 
-.wita-slot-body { display: none; padding: 0.35rem 0.5rem; }
-.wita-slot-body.open { display: block; }
-
-.wita-slot-meta-row {
-    display: flex; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.3rem;
-}
-.wita-meta-badge {
-    font-size: 0.6rem; padding: 0.08rem 0.3rem; border-radius: 2px;
-    border: 1px solid var(--color-fieldset-border, #ddd);
-    background: var(--color-cool-5-75, rgba(0,0,0,0.04));
-    color: var(--color-form-hint, #666);
-}
-.wita-meta-badge.order  { border-color: #9c7b3a; color: #7a5c1e; }
-.wita-meta-badge.level  { border-color: #5a8a5a; color: #2e6b2e; }
-.wita-meta-badge.prereq { border-color: #7a6aaa; color: #5a4a8a; cursor: help; }
-
-.wita-slot-worker-summary {
-    display: flex; gap: 0.75rem; font-size: 0.67rem;
-    color: var(--color-form-hint, #888); margin-bottom: 0.25rem;
+.wita-slot-thumb {
+    width: 28px; height: 28px;
+    border-radius: 3px; object-fit: cover;
+    flex-shrink: 0;
 }
 
-.wita-worker-chips { display: flex; flex-direction: column; gap: 0.18rem; margin-bottom: 0.3rem; }
-.wita-worker-chip {
-    display: flex; align-items: center; gap: 0.3rem;
-    font-size: 0.68rem; padding: 0.12rem 0.3rem;
-    border-radius: 3px;
-    background: var(--color-cool-5-75, rgba(0,0,0,0.04));
-    border: 1px solid var(--color-fieldset-border, #ddd);
+/* Name + sub-badges — takes all remaining space */
+.wita-slot-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
 }
-.morale-pip   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.chip-name    { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 6rem; }
-.chip-role    { color: var(--color-form-hint, #888); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.chip-status  { font-size: 0.6rem; color: var(--color-form-hint, #999); }
-
-.wita-slot-gm-controls { margin-top: 0.3rem; }
-
-.wita-cap-row {
-    display: flex; align-items: center; gap: 0.25rem;
-    font-size: 0.68rem; margin-bottom: 0.25rem;
+.wita-slot-name {
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--color-form-label);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.wita-cap-label { color: var(--color-form-label, #555); }
-.wita-cap-value { font-size: 0.78rem; font-weight: 700; min-width: 1.1rem; text-align: center; color: var(--color-highlights, #7a3f00); }
-.wita-cap-btn {
-    width: 1.25rem; height: 1.25rem; padding: 0; font-size: 0.8rem; font-weight: 700; line-height: 1;
-    border: 1px solid var(--color-fieldset-border, #9f9275); border-radius: 2px;
-    background: transparent; cursor: pointer;
+.wita-slot-sub {
+    display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;
+    font-size: 0.6rem; color: var(--color-form-hint);
 }
-.wita-cap-btn:hover { background: var(--color-highlights, #7a3f00); color: #fff; border-color: var(--color-highlights, #7a3f00); }
 
+/* Right-side action cluster — tight, fixed width */
 .wita-slot-actions {
-    display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
 }
-.wita-slot-actions select {
-    font-size: 0.68rem; padding: 0.1rem 0.25rem;
-    border: 1px solid var(--color-fieldset-border, #9f9275);
-    border-radius: 3px; background: var(--color-cool-5-75, #fff);
+.wita-slot-health { font-size: 0.72rem; line-height: 1; }
+.wita-slot-prod   { font-size: 0.62rem; color: var(--color-form-hint); min-width: 2rem; text-align: right; }
+
+.wita-slot-info-icon {
+    font-size: 0.65rem;
+    color: var(--color-form-hint);
+    opacity: 0.5;
+    pointer-events: none;
+    flex-shrink: 0;
 }
 
-/* ── Workers tab ─────────────────────────────────────────── */
-.wita-workers-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+/* Quick order button — compact pill */
+.wita-quick-order-btn {
+    font-size: 0.58rem !important;
+    padding: 0.1rem 0.3rem !important;
+    white-space: nowrap;
+    flex: unset !important;
+    line-height: 1.4;
+    min-width: unset;
+    height: 1.4rem;
+}
+.wita-quick-order-btn.order-active {
+    background: var(--color-highlights) !important;
+    color: #fff !important;
+    border-color: var(--color-highlights) !important;
+}
+
+.wita-issue-badge { font-size: 0.6rem; color: var(--color-level-error); white-space: nowrap; }
+
+/* ── Workers table ────────────────────────────────────────── */
+.wita-workers-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
 .wita-workers-table th {
-    text-align: left; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.04em; color: var(--color-form-hint, #888);
-    padding: 0.18rem 0.25rem; border-bottom: 1px solid var(--color-fieldset-border, #ccc);
+    font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--color-form-hint); padding: 0.2rem 0.3rem; text-align: left;
+    border-bottom: 1px solid var(--color-fieldset-border);
 }
-.wita-workers-table td { padding: 0.2rem 0.25rem; border-bottom: 1px solid var(--color-fieldset-border, #eee); vertical-align: middle; }
-.wita-workers-table tr:last-child td  { border-bottom: none; }
-.wita-workers-table tr:hover td       { background: var(--color-cool-5-75, rgba(0,0,0,0.03)); }
-
-.wita-morale-bar-wrap { display: flex; align-items: center; gap: 0.25rem; }
-.wita-morale-bar-bg   { flex: 1; height: 5px; background: var(--color-cool-5-75, rgba(0,0,0,0.1)); border-radius: 3px; overflow: hidden; }
-.wita-morale-bar-fill { height: 100%; border-radius: 3px; transition: width 0.2s; }
-.wita-morale-num      { font-size: 0.6rem; color: var(--color-form-hint, #888); width: 1.8rem; text-align: right; }
-
+.wita-workers-table td { padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--color-fieldset-border); vertical-align: middle; }
+.wita-workers-table tr:last-child td { border-bottom: none; }
 .wita-worker-actions { display: flex; gap: 0.2rem; }
 
-/* Defender roster */
-.wita-defender-roster { margin-bottom: 0.3rem; }
-.wita-defender-count  { font-size: 0.72rem; margin-bottom: 0.3rem; }
+/* ── Morale bar ───────────────────────────────────────────── */
+.wita-morale-bar-wrap { display: flex; align-items: center; gap: 0.25rem; }
+.wita-morale-bar-bg   { flex: 1; height: 4px; background: var(--color-fieldset-border); border-radius: 2px; overflow: hidden; min-width: 24px; }
+.wita-morale-bar-fill { height: 100%; border-radius: 2px; }
+.wita-morale-num      { font-size: 0.6rem; color: var(--color-form-hint); white-space: nowrap; }
+
+/* ── Defenders ────────────────────────────────────────────── */
+.wita-defender-roster { margin-bottom: 0.4rem; }
+.wita-defender-count  { font-size: 0.72rem; color: var(--color-form-label); margin-bottom: 0.25rem; }
 .wita-defender-list   { display: flex; flex-direction: column; gap: 0.15rem; }
 .wita-defender-row {
-    display: flex; align-items: center; gap: 0.35rem;
-    font-size: 0.7rem; padding: 0.15rem 0.35rem;
-    border-radius: 3px; background: var(--color-cool-5-75, rgba(0,0,0,0.03));
-    border: 1px solid var(--color-fieldset-border, #ddd);
+    display: flex; align-items: center; gap: 0.3rem;
+    padding: 0.15rem 0.3rem; font-size: 0.72rem;
+    border-radius: 3px; border: 1px solid var(--color-fieldset-border);
 }
 .wita-defender-row.dead { opacity: 0.5; }
-.def-name { flex: 1; }
+.def-name { flex: 1; color: var(--color-form-label); }
 
-/* ── Finance tab ─────────────────────────────────────────── */
-.wita-finance-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+/* ── Finance table ────────────────────────────────────────── */
+.wita-finance-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-bottom: 0.5rem; }
 .wita-finance-table th {
-    text-align: left; font-size: 0.6rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-form-hint, #888);
-    padding: 0.18rem 0.25rem; border-bottom: 1px solid var(--color-fieldset-border, #ccc);
+    font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--color-form-hint); padding: 0.2rem 0.3rem; text-align: left;
+    border-bottom: 1px solid var(--color-fieldset-border);
 }
-.wita-finance-table td { padding: 0.2rem 0.25rem; border-bottom: 1px solid var(--color-fieldset-border, #eee); }
+.wita-finance-table td { padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--color-fieldset-border); }
 .wita-finance-table tr:last-child td { border-bottom: none; }
+.wita-finance-total { font-size: 0.72rem; font-weight: 700; color: var(--color-highlights); text-align: right; margin-top: 0.2rem; }
 
-.wita-balance-callout {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: 0.45rem 0.6rem; margin-top: 0.4rem;
-    background: var(--color-cool-5-75, rgba(0,0,0,0.04));
-    border: 1px solid var(--color-fieldset-border, #9f9275); border-radius: 4px;
-    font-size: 0.72rem; color: var(--color-form-hint, #888);
+/* ── Reports ──────────────────────────────────────────────── */
+.wita-report-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.wita-report-card {
+    border: 1px solid var(--color-fieldset-border); border-radius: 4px;
+    padding: 0.35rem 0.5rem; cursor: pointer; transition: background 0.1s;
 }
-.wita-balance-value { font-size: 1.05rem; font-weight: 700; color: var(--color-highlights, #7a3f00); }
+.wita-report-card:hover { background: var(--color-highlights-15); }
+.wita-report-title { font-size: 0.75rem; font-weight: 600; color: var(--color-form-label); }
+.wita-report-meta  { font-size: 0.62rem; color: var(--color-form-hint); margin-top: 0.1rem; }
 
-.wita-trend-up   { color: #2e7d32; }
-.wita-trend-down { color: #c0392b; }
-.wita-trend-flat { color: var(--color-form-hint, #888); }
-
-/* ── Reports tab ─────────────────────────────────────────── */
-.wita-report-list { display: flex; flex-direction: column; gap: 0.25rem; }
-.wita-report-row {
-    display: flex; align-items: center; gap: 0.35rem;
-    padding: 0.28rem 0.4rem; font-size: 0.7rem;
-    border: 1px solid var(--color-fieldset-border, #ccc); border-radius: 3px;
-    cursor: pointer; transition: background 0.1s;
-}
-.wita-report-row:hover { background: var(--color-cool-5-75, rgba(0,0,0,0.04)); border-color: var(--color-highlights, #7a3f00); }
-.wita-report-turn   { font-weight: 700; color: var(--color-highlights, #7a3f00); white-space: nowrap; }
-.wita-report-date   { color: var(--color-form-hint, #888); white-space: nowrap; }
-.wita-report-event  { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.wita-report-income { color: #2e7d32; font-weight: 600; white-space: nowrap; }
-
-/* ── Engineer tab ────────────────────────────────────────── */
-.wita-engineer-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+/* ── Engineer tab ─────────────────────────────────────────── */
+.wita-engineer-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; margin-bottom: 0.5rem; }
 .wita-engineer-table th {
-    text-align: left; font-size: 0.6rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-form-hint, #888);
-    padding: 0.18rem 0.25rem; border-bottom: 1px solid var(--color-fieldset-border, #ccc);
+    font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--color-form-hint); padding: 0.2rem 0.3rem; text-align: left;
+    border-bottom: 1px solid var(--color-fieldset-border);
 }
-.wita-engineer-table td { padding: 0.22rem 0.25rem; border-bottom: 1px solid var(--color-fieldset-border, #eee); vertical-align: middle; }
+.wita-engineer-table td { padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--color-fieldset-border); vertical-align: middle; }
 .wita-engineer-table tr:last-child td { border-bottom: none; }
-.wita-engineer-table tr:hover td { background: var(--color-cool-5-75, rgba(0,0,0,0.02)); }
+.wita-cost-input {
+    width: 60px; background: transparent; border: none;
+    border-bottom: 1px solid var(--color-fieldset-border);
+    color: var(--color-form-label); font-size: 0.72rem; padding: 0 0.1rem;
+    text-align: right;
+}
+.wita-cost-input:focus { border-bottom-color: var(--color-highlights); outline: none; }
+
+/* ── Drop zone ────────────────────────────────────────────── */
+.wita-facility-dropzone {
+    border: 2px dashed var(--color-fieldset-border); border-radius: 4px;
+    padding: 0.6rem; text-align: center;
+    font-size: 0.68rem; color: var(--color-form-hint);
+    transition: border-color 0.15s, background 0.15s; cursor: default;
+}
+.wita-facility-dropzone.drag-over {
+    border-color: var(--color-highlights); background: var(--color-highlights-15);
+    color: var(--color-highlights);
+}
+
+/* ── Inline name inputs ───────────────────────────────────── */
+.wita-inline-name:focus {
+    border-bottom-color: var(--color-highlights) !important;
+    outline: none;
+}
+
+/* ── Cap buttons ──────────────────────────────────────────── */
+.wita-cap-row { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; color: var(--color-form-label); }
+.wita-cap-btn {
+    width: 1.2rem; height: 1.2rem; padding: 0; font-size: 0.7rem; line-height: 1;
+    border: 1px solid var(--color-fieldset-border); background: transparent;
+    cursor: pointer; border-radius: 2px; color: var(--color-form-label);
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.wita-cap-btn:hover { background: var(--color-highlights-15); color: var(--color-highlights); border-color: var(--color-highlights); }
+
+/* ── Scene controls button ────────────────────────────────── */
+#wita-bastion-btn button { font-size: 1rem; }
+
+/* ══════════════════════════════════════════════════════════
+   FACILITY DETAIL OVERLAY
+   ══════════════════════════════════════════════════════════ */
+.wita-detail-overlay {
+    position: absolute; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 0.75rem;
+    padding-top: 2rem;
+}
+
+.wita-detail-box {
+    background: var(--color-cool-5);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 6px; width: 380px; max-width: 95%; max-height: 88%;
+    min-width: 280px; min-height: 200px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.6); overflow: hidden;
+    resize: both;
+}
+
+.wita-detail-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    border-bottom: 1px solid var(--color-fieldset-border);
+    flex-shrink: 0;
+}
+.wita-detail-title {
+    flex: 1; font-size: 0.82rem; font-weight: 700; color: var(--color-highlights);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wita-detail-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.75rem; color: var(--color-form-hint);
+    padding: 0.1rem 0.3rem; border-radius: 3px; line-height: 1;
+}
+.wita-detail-close:hover { color: var(--color-highlights); background: var(--color-highlights-15); }
+
+.wita-detail-body {
+    padding: 0.6rem; overflow-y: auto; flex: 1;
+    color: var(--color-form-label); font-size: 0.78rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+}
+
+.wita-detail-top { display: flex; gap: 0.6rem; flex-shrink: 0; }
+
+.wita-detail-img-col {
+    flex-shrink: 0; width: 68px;
+    display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+}
+.wita-detail-img { width: 68px; height: 68px; border-radius: 5px; object-fit: cover; border: 1px solid var(--color-fieldset-border); }
+.wita-detail-stat { font-size: 0.6rem; color: var(--color-form-hint); text-align: center; line-height: 1.3; }
+
+.wita-detail-controls-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+
+.wita-detail-field { display: flex; flex-direction: column; gap: 0.1rem; }
+.wita-detail-field label { font-size: 0.62rem; color: var(--color-form-hint); text-transform: uppercase; letter-spacing: 0.03em; }
+.wita-detail-field select {
+    width: 100%; background: var(--color-cool-5); color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border); border-radius: 3px;
+    padding: 0.15rem 0.3rem; font-size: 0.7rem;
+}
+
+.wita-detail-gm-btns { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.1rem; }
+
+.wita-detail-desc {
+    flex: 1; border-top: 1px solid var(--color-fieldset-border);
+    padding-top: 0.45rem; font-size: 0.73rem; color: var(--color-form-label);
+    line-height: 1.55; overflow-y: auto;
+}
+.wita-detail-desc p { margin: 0 0 0.35rem; }
+.wita-detail-desc p:last-child { margin-bottom: 0; }
+.wita-detail-desc a { color: var(--color-highlights); }
+.wita-detail-desc ul, .wita-detail-desc ol { padding-left: 1.2rem; margin: 0 0 0.35rem; }
+.wita-detail-desc table { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
+.wita-detail-desc td, .wita-detail-desc th { border: 1px solid var(--color-fieldset-border); padding: 0.15rem 0.3rem; }
+
+.wita-detail-hirelings { flex-shrink: 0; border-top: 1px solid var(--color-fieldset-border); padding-top: 0.4rem; }
+
+.wita-detail-section-label {
+    font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--color-form-hint); margin-bottom: 0.3rem;
+}
+.wita-detail-empty { font-size: 0.68rem; color: var(--color-form-hint); font-style: italic; margin-bottom: 0.3rem; }
+
+.wita-detail-hireling-row {
+    display: flex; align-items: center; gap: 0.3rem;
+    padding: 0.15rem 0; font-size: 0.72rem;
+}
+.wita-detail-hireling-name { font-weight: 600; color: var(--color-form-label); flex-shrink: 0; }
+.wita-detail-hireling-role { flex: 1; color: var(--color-form-hint); font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.wita-detail-micro-btn {
+    font-size: 0.6rem; padding: 0.1rem 0.35rem;
+    border: 1px solid var(--color-fieldset-border); border-radius: 3px;
+    background: transparent; color: var(--color-form-label);
+    cursor: pointer; line-height: 1.4; white-space: nowrap;
+    transition: background 0.12s, color 0.12s;
+}
+.wita-detail-micro-btn:hover { background: var(--color-highlights-15); color: var(--color-highlights); border-color: var(--color-highlights); }
+.wita-detail-micro-btn.danger:hover { background: rgba(158,69,69,0.18); color: var(--color-level-error); border-color: var(--color-level-error); }
+
+/* ── Slot pool controls (Facilities tab) ──────────────────── */
+.wita-slot-pool-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.72rem;
+    color: var(--color-form-label);
+    flex-wrap: wrap;
+}
+.wita-pool-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-form-hint);
+}
+.wita-pool-btn {
+    width: 1.3rem; height: 1.3rem; padding: 0;
+    font-size: 0.8rem; line-height: 1;
+    border: 1px solid var(--color-fieldset-border);
+    background: transparent; cursor: pointer; border-radius: 2px;
+    color: var(--color-form-label);
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.wita-pool-btn:hover {
+    background: var(--color-highlights-15);
+    color: var(--color-highlights);
+    border-color: var(--color-highlights);
+}
+
+
+
+/* ══════════════════════════════════════════════════════════
+   FACILITY DETAIL WINDOW (WITAFacilityDetail ApplicationV2)
+   ══════════════════════════════════════════════════════════ */
+.wita-facility-detail .window-content {
+    padding: 0;
+    overflow: visible;
+}
+
+.wita-fd-body {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem;
+    gap: 0.5rem;
+    color: var(--color-form-label);
+    font-size: 0.78rem;
+    font-family: var(--font-primary, "Signika");
+}
+
+.wita-fd-top {
+    display: flex;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.wita-fd-img-col {
+    flex-shrink: 0;
+    width: 68px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+}
+.wita-fd-img {
+    width: 68px; height: 68px;
+    border-radius: 5px; object-fit: cover;
+    border: 1px solid var(--color-fieldset-border);
+}
+.wita-fd-stat {
+    font-size: 0.6rem;
+    color: var(--color-form-hint);
+    text-align: center;
+    line-height: 1.3;
+}
+
+.wita-fd-controls-col {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: 0.3rem;
+}
+.wita-fd-field { display: flex; flex-direction: column; gap: 0.1rem; }
+.wita-fd-field label {
+    font-size: 0.62rem; color: var(--color-form-hint);
+    text-transform: uppercase; letter-spacing: 0.03em;
+}
+.wita-fd-field select {
+    width: 100%;
+    background: var(--color-cool-5);
+    color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px; padding: 0.15rem 0.3rem; font-size: 0.7rem;
+}
+.wita-fd-gm-btns { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.1rem; }
+
+/* Description — scrollable, capped so window stays manageable */
+.wita-fd-desc {
+    overflow-y: auto;
+    max-height: 220px;
+    min-height: 60px;
+    border-top: 1px solid var(--color-fieldset-border);
+    padding-top: 0.45rem;
+    font-size: 0.73rem;
+    color: var(--color-form-label);
+    line-height: 1.55;
+}
+.wita-fd-desc p { margin: 0 0 0.35rem; }
+.wita-fd-desc p:last-child { margin-bottom: 0; }
+.wita-fd-desc a { color: var(--color-highlights); }
+.wita-fd-desc ul, .wita-fd-desc ol { padding-left: 1.2rem; margin: 0 0 0.35rem; }
+.wita-fd-desc table { width: 100%; border-collapse: collapse; font-size: 0.68rem; }
+.wita-fd-desc td, .wita-fd-desc th { border: 1px solid var(--color-fieldset-border); padding: 0.15rem 0.3rem; }
+
+/* Hirelings section */
+.wita-fd-hirelings {
+    flex-shrink: 0;
+    border-top: 1px solid var(--color-fieldset-border);
+    padding-top: 0.4rem;
+}

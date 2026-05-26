@@ -28,7 +28,7 @@ async function _witaBastionRun(fn) {
 }
 
 // ── State persistence ──────────────────────────────────────────
-async function getBastionState() {
+export async function getBastionState() {
     try {
         return game.settings.get("wita", "bastionState") ?? {
             longRestCount:          0,
@@ -41,12 +41,12 @@ async function getBastionState() {
     }
 }
 
-async function saveBastionState(state) {
+export async function saveBastionState(state) {
     await game.settings.set("wita", "bastionState", state);
 }
 
 // ── Long Rest Handler ──────────────────────────────────────────
-async function onLongRestCompleted(actor, result) {
+export async function onLongRestCompleted(actor, result) {
     if (!result.longRest) return;
     if (!game.user.isGM) return;
     if (actor.type !== "character") return;
@@ -74,7 +74,7 @@ async function onLongRestCompleted(actor, result) {
 Hooks.on("dnd5e.restCompleted", onLongRestCompleted);
 
 // ── Run Bastion Turn ───────────────────────────────────────────
-async function runBastionTurn(turnNumber) {
+export async function runBastionTurn(turnNumber) {
     console.log(`WITA | Running bastion turn #${turnNumber}`);
 
     try {

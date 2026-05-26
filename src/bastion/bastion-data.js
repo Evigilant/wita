@@ -274,29 +274,30 @@ const BASTION_KEY  = "bastion";
 const ENGINEER_KEY = "engineeringCosts";
 
 export function getBastionData() {
-    const raw = game.world.getFlag("wita", BASTION_KEY);
+    const raw = game.settings.get("wita", "bastion");
     return foundry.utils.mergeObject(
-        { bastionTier: 0, basicSlots: [], specialSlots: [], workers: [], defenders: [] },
+        { bastionTier: 0, basicSlots: [], specialSlots: [], workers: [], defenders: [],
+          roomyLicenses: 0, vastLicenses: 0 },
         raw ?? {},
         { inplace: false }
     );
 }
 
 export async function saveBastionData(data) {
-    await game.world.setFlag("wita", BASTION_KEY, data);
+    await game.settings.set("wita", "bastion", data);
 }
 
 export function getEngineeringData() {
-    const raw = game.world.getFlag("wita", ENGINEER_KEY);
+    const raw = game.settings.get("wita", "engineeringCosts");
     return foundry.utils.mergeObject(
-        { vendorActorId: null, facilities: {}, metaItems: {} },
+        { vendorActorId: null, facilities: {}, metaItems: {}, stockedFacilities: [], stockedMetaItems: [] },
         raw ?? {},
         { inplace: false }
     );
 }
 
 export async function saveEngineeringData(data) {
-    await game.world.setFlag("wita", ENGINEER_KEY, data);
+    await game.settings.set("wita", "engineeringCosts", data);
 }
 
 // ── Slot helpers ──────────────────────────────────────────────

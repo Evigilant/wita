@@ -47,6 +47,8 @@ Hooks.once("init", () => {
         config: false,
         default: { longRestCount: 0, turnNumber: 0, pendingFluctuationType: null },
     });
+    game.settings.register("wita", "bastion", { scope: "world", config: false, type: Object, default: {} });
+    game.settings.register("wita", "engineeringCosts", { scope: "world", config: false, type: Object, default: {} });
 
     console.log("WITA | Settings registered.");
 });

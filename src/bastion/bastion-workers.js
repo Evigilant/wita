@@ -39,7 +39,7 @@ export async function createWorker({ name, role, status = "Active", morale = 70,
         name:   sanitizeHTML(name ?? "Unknown"),
         role:   sanitizeHTML(role ?? ""),
         status: WITA_WORKER_STATUSES.includes(status) ? status : "Active",
-        morale: Math.clamped(morale, MORALE_MIN, MORALE_MAX),
+        morale: Math.min(Math.max(morale, MORALE_MIN), MORALE_MAX),
     };
     data.workers = [...(data.workers ?? []), worker];
     if (slotId) {
@@ -57,7 +57,7 @@ export async function updateWorker(workerId, changes) {
     if (changes.name)           changes.name   = sanitizeHTML(changes.name);
     if (changes.role)           changes.role   = sanitizeHTML(changes.role);
     if (changes.morale !== undefined) {
-        changes.morale = Math.clamped(changes.morale, MORALE_MIN, MORALE_MAX);
+        changes.morale = Math.min(Math.max(changes.morale, MORALE_MIN), MORALE_MAX);
     }
     data.workers[idx] = foundry.utils.mergeObject(data.workers[idx], changes);
     await saveBastionData(data);
@@ -195,7 +195,7 @@ export function applyMoraleTick(data, event, facilityResults) {
             delta += WITA_MORALE_TICK.facilityDestroyed;
         }
 
-        worker.morale = Math.clamped((worker.morale ?? 50) + delta, MORALE_MIN, MORALE_MAX);
+        worker.morale = Math.min(Math.max((worker.morale ?? 50) + delta, MORALE_MIN), MORALE_MAX);
 
         if (worker.morale === 0 && worker.status === "Active") {
             worker.status = "Fled";

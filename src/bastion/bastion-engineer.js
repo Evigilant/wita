@@ -14,6 +14,7 @@ import { getBastionData, saveBastionData,
          WITA_SIZE_LABEL, WITA_ORDER_LABEL }  from "./bastion-data.js";
 import { assignFacilityToSlot, enlargeSlot,
          setBastionTier, addSlot,
+         getSizeLimits,
          validateFacilityDrop }               from "./bastion-slots.js";
 
 const DMG_PACK          = "dnd-dungeon-masters-guide.bastions";
@@ -39,16 +40,74 @@ export async function setFacilityCost(itemId, cost) {
     await saveEngineeringData(data);
 }
 
-// Meta-items (tier upgrades, slot expansions, enlargements)
+// ── Stock management ─────────────────────────────────────────
+
+/**
+ * Adds a facility item to the Engineer's stocked list by UUID.
+ * Reads item metadata and seeds a default cost entry.
+ */
+export async function _addFacilityToStock(uuid) {
+    if (!game.user.isGM) return;
+
+    const item = await fromUuid(uuid);
+    if (!item) { ui.notifications.warn("WITA | Could not load item from UUID."); return; }
+
+    const itemId  = item.id ?? item._id;
+    const engData = getEngineeringData();
+    const stocked = engData.stockedFacilities ?? [];
+
+    if (stocked.includes(itemId)) {
+        ui.notifications.info(`WITA | "${item.name}" is already in the stock list.`);
+        return;
+    }
+
+    stocked.push(itemId);
+    engData.stockedFacilities = stocked;
+
+    // Seed default cost if none exists
+    if (!engData.facilities?.[itemId]) {
+        engData.facilities        = engData.facilities ?? {};
+        engData.facilities[itemId] = { gpOnly: 1000, gpWithMaterials: 400, materials: [] };
+    }
+
+    await saveEngineeringData(engData);
+
+    // Re-read to get the current vendorActorId (may have been set by a concurrent operation)
+    const freshData = getEngineeringData();
+    const vendor = freshData.vendorActorId ? game.actors.get(freshData.vendorActorId) : null;
+    if (vendor) {
+        const already = vendor.items.find(i => i.flags?.wita?.engineerItemId === itemId);
+        if (!already) {
+            await vendor.createEmbeddedDocuments("Item", [_facilityVendorItem(item)]);
+        }
+    }
+
+    ui.notifications.info(`WITA | "${item.name}" added to Engineer stock.`);
+}
+
+/**
+ * Removes a facility from the stocked list and its cost entry.
+ */
+export async function _removeFacilityFromStock(itemId) {
+    if (!game.user.isGM) return;
+    const engData = getEngineeringData();
+    engData.stockedFacilities = (engData.stockedFacilities ?? []).filter(id => id !== itemId);
+    delete engData.facilities?.[itemId];
+    await saveEngineeringData(engData);
+}
+
+// Meta-items (tier upgrades, slot expansions, enlargements, size licenses)
 export function getMetaCost(key) {
     const data = getEngineeringData();
     const defaults = {
-        tierUpgrade1: { gpOnly: 5000,  gpWithMaterials: 2000, materials: [] },
-        tierUpgrade2: { gpOnly: 15000, gpWithMaterials: 6000, materials: [] },
-        tierUpgrade3: { gpOnly: 40000, gpWithMaterials: 15000, materials: [] },
-        basicSlot:    { gpOnly: 500,   gpWithMaterials: 200,  materials: [] },
-        specialSlot:  { gpOnly: 2000,  gpWithMaterials: 800,  materials: [] },
-        enlarge:      { gpOnly: 2000,  gpWithMaterials: 800,  materials: [] },
+        tierUpgrade1:  { gpOnly: 5000,  gpWithMaterials: 2000,  materials: [] },
+        tierUpgrade2:  { gpOnly: 15000, gpWithMaterials: 6000,  materials: [] },
+        tierUpgrade3:  { gpOnly: 40000, gpWithMaterials: 15000, materials: [] },
+        basicSlot:     { gpOnly: 500,   gpWithMaterials: 200,   materials: [] },
+        specialSlot:   { gpOnly: 2000,  gpWithMaterials: 800,   materials: [] },
+        enlarge:       { gpOnly: 2000,  gpWithMaterials: 800,   materials: [] },
+        roomyLicense:  { gpOnly: 3000,  gpWithMaterials: 1200,  materials: [] },
+        vastLicense:   { gpOnly: 8000,  gpWithMaterials: 3000,  materials: [] },
     };
     return foundry.utils.mergeObject(
         defaults[key] ?? { gpOnly: 1000, gpWithMaterials: 400, materials: [] },
@@ -81,6 +140,7 @@ export async function createEngineerVendor() {
     }
 
     ui.notifications.info("WITA | Creating Engineer vendor…");
+    await seedBastionMetaItems();
 
     const actor = await Actor.create({
         name: VENDOR_ACTOR_NAME,
@@ -125,29 +185,43 @@ export async function createEngineerVendor() {
     // Category C: Enlargement
     {
         const cost = getMetaCost("enlarge");
-        itemsToCreate.push(_metaVendorItem("Enlarge Facility (Roomy → Vast)", cost.gpOnly, "enlarge", "enlargement", {}));
+        itemsToCreate.push(_metaVendorItem("Enlarge Facility", cost.gpOnly, "enlarge", "enlargement", {}));
     }
 
-    // Category D: DMG facilities
-    const pack = game.packs.get(DMG_PACK);
-    if (pack) {
-        const docs = await pack.getDocuments();
-        for (const facilityItem of docs) {
-            itemsToCreate.push(_facilityVendorItem(facilityItem));
-        }
+    // Category D: Size licenses
+    {
+        const roomyCost = getMetaCost("roomyLicense");
+        itemsToCreate.push(_metaVendorItem("Roomy Slot License", roomyCost.gpOnly, "roomyLicense", "sizeLicense", { sizeType: "roomy" }));
+        const vastCost = getMetaCost("vastLicense");
+        itemsToCreate.push(_metaVendorItem("Vast Slot License", vastCost.gpOnly, "vastLicense", "sizeLicense", { sizeType: "vast" }));
     }
 
-    // Category E: Custom facilities already created
-    for (const item of game.items) {
-        if (item.getFlag?.("wita", "customFacility")) {
-            itemsToCreate.push(_facilityVendorItem(item));
-        }
-    }
+    // Category E: Facilities are added via drag-drop in the Engineer tab, not bulk-created here.
 
     await actor.createEmbeddedDocuments("Item", itemsToCreate);
 
     engData.vendorActorId = actor.id;
     await saveEngineeringData(engData);
+
+    // Sync any facilities already in stockedFacilities into the new vendor
+    const stockedFacilities = engData.stockedFacilities ?? [];
+    if (stockedFacilities.length) {
+        const facilityItems = [];
+        for (const itemId of stockedFacilities) {
+            // Try world items first, then compendium
+            const worldItem = game.items.get(itemId);
+            if (worldItem) { facilityItems.push(_facilityVendorItem(worldItem)); continue; }
+            // Search compendium
+            const pack = game.packs.get(DMG_PACK);
+            if (pack) {
+                const doc = await pack.getDocument(itemId);
+                if (doc) facilityItems.push(_facilityVendorItem(doc));
+            }
+        }
+        if (facilityItems.length) {
+            await actor.createEmbeddedDocuments("Item", facilityItems);
+        }
+    }
 
     await game.itempiles.API.makeItemPileMerchant?.(actor)
         ?? await game.itempiles.API.turnTokenIntoItemPile?.(actor.getActiveTokens()?.[0] ?? actor);
@@ -159,7 +233,7 @@ export async function createEngineerVendor() {
 function _metaVendorItem(name, gpOnly, metaKey, category, extraFlags) {
     return {
         name,
-        type: "loot",
+        type: "consumable",  // separates from "loot" facilities in Sort by Type
         img:  "icons/svg/castle.svg",
         system: { quantity: 99, price: { value: gpOnly, denomination: "gp" } },
         flags: {
@@ -167,7 +241,7 @@ function _metaVendorItem(name, gpOnly, metaKey, category, extraFlags) {
                 item: {
                     price:    gpOnly,
                     quantity: 99,
-                    macro:    "Compendium.wita.wita-macros.Macro.witaEngineerPurchase",
+                    macro:    "Compendium.wita.wita-macros.Macro.8Zd7nXPybrOKzNjA",
                 }
             },
             wita: {
@@ -186,13 +260,17 @@ function _facilityVendorItem(facilityItem) {
     const matLabel = cost.materials?.length
         ? cost.materials.map(m => `${m.qty}× ${m.name}`).join(", ")
         : "None";
-    return foundry.utils.mergeObject(facilityItem.toObject?.() ?? {}, {
+    // Use type "loot" so dnd5e allows it in NPC/vendor inventories.
+    // "facility" type is restricted from actor inventories in dnd5e v3.
+    const base = facilityItem.toObject?.() ?? {};
+    return foundry.utils.mergeObject(base, {
+        type:   "loot",
         system: { quantity: 99, price: { value: cost.gpOnly, denomination: "gp" } },
         flags: {
             "item-piles": { item: {
                 price:    cost.gpOnly,
                 quantity: 99,
-                macro:    "Compendium.wita.wita-macros.Macro.witaEngineerPurchase",
+                macro:    "Compendium.wita.wita-macros.Macro.8Zd7nXPybrOKzNjA",
             }},
             wita: {
                 engineerCategory: "facility",
@@ -206,16 +284,20 @@ function _facilityVendorItem(facilityItem) {
     });
 }
 
-// ── Sync vendor prices ────────────────────────────────────────
+// ── Sync vendor (prices + items + types) ─────────────────────
 
 export async function syncVendorPrices() {
     if (!game.user.isGM) return;
     const engData = getEngineeringData();
     const vendor  = engData.vendorActorId ? game.actors.get(engData.vendorActorId) : null;
-    if (!vendor) return;
+    if (!vendor) { ui.notifications.warn("WITA | No vendor found — create one first."); return; }
 
-    const updates = [];
-    for (const item of vendor.items) {
+    const updates     = [];
+    const toCreate    = [];
+    const vendorItems = vendor.items;
+
+    // ── 1. Sync existing vendor items (prices + type label) ──
+    for (const item of vendorItems) {
         const wf = item.flags?.wita;
         if (!wf) continue;
 
@@ -231,11 +313,14 @@ export async function syncVendorPrices() {
                 "flags.wita.materialsLabel":      matLabel,
                 "flags.item-piles.item.price":    cost.gpOnly,
                 "system.price.value":             cost.gpOnly,
+                "system.type.value":              "facility",
+                "system.type.label":              "Facility",
             });
         } else if (wf.engineerCategory && wf.engineerMetaKey) {
             const cost = getMetaCost(wf.engineerMetaKey);
             updates.push({
                 _id:                           item.id,
+                type:                          "consumable",
                 "flags.wita.gpOnly":           cost.gpOnly,
                 "flags.item-piles.item.price": cost.gpOnly,
                 "system.price.value":          cost.gpOnly,
@@ -243,10 +328,42 @@ export async function syncVendorPrices() {
         }
     }
 
-    if (updates.length) {
-        await vendor.updateEmbeddedDocuments("Item", updates);
-        console.log(`WITA | Synced ${updates.length} vendor prices.`);
+    // ── 2. Add missing stocked facilities ──
+    const stockedFacilities = engData.stockedFacilities ?? [];
+    for (const itemId of stockedFacilities) {
+        const alreadyInVendor = vendorItems.find(i => i.flags?.wita?.engineerItemId === itemId);
+        if (alreadyInVendor) continue;
+
+        const worldItem = game.items.get(itemId);
+        if (worldItem) { toCreate.push(_facilityVendorItem(worldItem)); continue; }
+        const pack = game.packs.get(DMG_PACK);
+        if (pack) {
+            const doc = await pack.getDocument(itemId);
+            if (doc) toCreate.push(_facilityVendorItem(doc));
+        }
     }
+
+    // ── 3. Add missing stocked meta items ──
+    const stockedMeta = engData.stockedMetaItems ?? [];
+    for (const { metaKey, name } of stockedMeta) {
+        const alreadyInVendor = vendorItems.find(i => i.flags?.wita?.engineerMetaKey === metaKey);
+        if (alreadyInVendor) continue;
+        const cost = getMetaCost(metaKey);
+        toCreate.push(_metaVendorItem(name, cost.gpOnly, metaKey, _metaCategoryFromKey(metaKey), {}));
+    }
+
+    if (updates.length)  await vendor.updateEmbeddedDocuments("Item", updates);
+    if (toCreate.length) await vendor.createEmbeddedDocuments("Item", toCreate);
+
+    const total = updates.length + toCreate.length;
+    ui.notifications.info(`WITA | Vendor synced — ${updates.length} updated, ${toCreate.length} added.`);
+    console.log(`WITA | Synced vendor: ${updates.length} updated, ${toCreate.length} added.`);
+}
+
+function _metaCategoryFromKey(metaKey) {
+    if (metaKey.startsWith("tierUpgrade")) return "tierUpgrade";
+    if (metaKey === "enlarge")              return "enlargement";
+    return "slotExpansion";
 }
 
 // ── Add custom facility to vendor ────────────────────────────
@@ -277,6 +394,9 @@ export async function handleEngineerPurchase({ seller, buyer, item, quantity, us
         case "enlargement":
             return _handleEnlargement(wf, buyer);
 
+        case "sizeLicense":
+            return _handleSizeLicense(wf, buyer);
+
         case "facility":
             return _handleFacilityPurchase(item, wf, buyer);
 
@@ -291,23 +411,23 @@ export async function handleEngineerPurchase({ seller, buyer, item, quantity, us
 async function _handleTierUpgrade(wf, buyer) {
     const data      = getBastionData();
     const curTier   = data.bastionTier ?? 0;
-    const newTier   = wf.tier;
-    const cost      = getMetaCost(wf.engineerMetaKey);
+    const newTier   = parseInt(wf.tier);  // flags may stringify numbers
 
-    if (newTier !== curTier + 1) {
-        ui.notifications.warn(`WITA | Must purchase Tier ${curTier + 1} before Tier ${newTier}.`);
+    if (isNaN(newTier) || newTier <= curTier) {
+        ui.notifications.warn(`WITA | Bastion is already Tier ${curTier} — this upgrade has no effect.`);
+        const cost = getMetaCost(wf.engineerMetaKey);
+        if (cost?.gpOnly) await game.itempiles.API.addCurrencies(buyer, `${cost.gpOnly}gp`);
         return false;
     }
 
-    const confirmed = await Dialog.confirm({
-        title:   `Bastion Expansion — ${WITA_TIER_LABEL[newTier]}`,
-        content: `<p>Upgrade bastion to <strong>${WITA_TIER_LABEL[newTier]}</strong> for <strong>${cost.gpOnly.toLocaleString()} GP</strong>?</p>`,
-    });
-    if (!confirmed) return false;
+    if (newTier !== curTier + 1) {
+        ui.notifications.warn(`WITA | Must reach Tier ${newTier - 1} before purchasing Tier ${newTier}.`);
+        const cost = getMetaCost(wf.engineerMetaKey);
+        if (cost?.gpOnly) await game.itempiles.API.addCurrencies(buyer, `${cost.gpOnly}gp`);
+        return false;
+    }
 
-    const gpResult = await game.itempiles.API.removeCurrencies(buyer, `${cost.gpOnly}gp`);
-    if (!gpResult) { ui.notifications.error("WITA | Could not charge GP."); return false; }
-
+    // GP already charged by Item Piles.
     await setBastionTier(newTier);
     ui.notifications.info(`WITA | Bastion upgraded to ${WITA_TIER_LABEL[newTier]}!`);
     _refreshPanel();
@@ -316,20 +436,34 @@ async function _handleTierUpgrade(wf, buyer) {
 
 async function _handleSlotExpansion(wf, buyer) {
     const fType = wf.facilityType;
-    const cost  = getMetaCost(wf.engineerMetaKey);
     const label = fType === "basic" ? "Basic" : "Special";
 
-    const confirmed = await Dialog.confirm({
-        title:   `Add ${label} Facility Slot`,
-        content: `<p>Add a new ${label} facility slot for <strong>${cost.gpOnly.toLocaleString()} GP</strong>?</p>`,
-    });
-    if (!confirmed) return false;
-
-    const gpResult = await game.itempiles.API.removeCurrencies(buyer, `${cost.gpOnly}gp`);
-    if (!gpResult) { ui.notifications.error("WITA | Could not charge GP."); return false; }
-
+    // GP already charged by Item Piles.
     await addSlot(fType);
     ui.notifications.info(`WITA | New ${label} facility slot added.`);
+    _refreshPanel();
+    return false;
+}
+
+async function _handleSizeLicense(wf, buyer) {
+    const sizeType = wf.sizeType; // "roomy" or "vast"
+    const data     = getBastionData();
+    const limits   = getSizeLimits(data);
+
+    if (sizeType === "roomy") {
+        data.roomyLicenses = (data.roomyLicenses ?? 0) + 1;
+        await saveBastionData(data);
+        ui.notifications.info(`WITA | Roomy Slot License applied. You can now enlarge one more facility to Roomy (${limits.usedRoomy}/${limits.maxRoomy + 1} used).`);
+    } else if (sizeType === "vast") {
+        data.vastLicenses = (data.vastLicenses ?? 0) + 1;
+        await saveBastionData(data);
+        ui.notifications.info(`WITA | Vast Slot License applied. You can now enlarge one more facility to Vast (${limits.usedVast}/${limits.maxVast + 1} used).`);
+    } else {
+        ui.notifications.warn("WITA | Unknown size license type.");
+        const cost = getMetaCost(wf.engineerMetaKey);
+        if (cost?.gpOnly) await game.itempiles.API.addCurrencies(buyer, `${cost.gpOnly}gp`);
+    }
+
     _refreshPanel();
     return false;
 }
@@ -337,41 +471,43 @@ async function _handleSlotExpansion(wf, buyer) {
 async function _handleEnlargement(wf, buyer) {
     const data    = getBastionData();
     const cost    = getMetaCost("enlarge");
-    const allFac  = getAllFacilities();
 
-    // Only Roomy enlargeable facilities qualify.
-    const eligible = [...data.specialSlots ?? []]
-        .filter(s => s.facilityUuid && s.facilitySize === "roomy" && allFac[s.facilityItemId]?.enlargeable);
+    // All non-vast occupied slots are eligible
+    const eligible = [...(data.basicSlots ?? []), ...(data.specialSlots ?? [])]
+        .filter(s => s.facilityUuid && s.facilitySize !== "vast");
 
     if (!eligible.length) {
-        ui.notifications.warn("WITA | No enlargeable Roomy facilities currently in the bastion.");
+        ui.notifications.warn("WITA | No enlargeable facilities currently in the bastion.");
+        if (cost?.gpOnly) await game.itempiles.API.addCurrencies(buyer, `${cost.gpOnly}gp`);
         return false;
     }
 
     const options = eligible.map(s =>
-        `<option value="${s.id}">${sanitizeHTML(s.facilityName ?? "Unknown")}</option>`
+        `<option value="${s.id}">${sanitizeHTML(s.facilityName ?? "Unknown")} (${s.facilitySize})</option>`
     ).join("");
 
     const choice = await new Promise(resolve => {
         new Dialog({
             title:   "Enlarge Facility",
             content: `
-                <p>Select the facility to enlarge to Vast for <strong>${cost.gpOnly.toLocaleString()} GP</strong>:</p>
+                <p>Select the facility to enlarge:</p>
                 <select name="slotId" style="width:100%;margin-top:0.4rem">${options}</select>
             `,
             buttons: {
-                ok:     { label: "Enlarge", callback: html => resolve(html[0].querySelector("[name=slotId]").value) },
+                ok:     { label: "Enlarge", callback: html => resolve((html instanceof jQuery ? html[0] : html).querySelector("[name=slotId]").value) },
                 cancel: { label: "Cancel",  callback: () => resolve(null) },
             },
             close: () => resolve(null),
         }).render(true);
     });
 
-    if (!choice) return false;
+    if (!choice) {
+        // Refund GP on cancel
+        if (cost?.gpOnly) await game.itempiles.API.addCurrencies(buyer, `${cost.gpOnly}gp`);
+        return false;
+    }
 
-    const gpResult = await game.itempiles.API.removeCurrencies(buyer, `${cost.gpOnly}gp`);
-    if (!gpResult) { ui.notifications.error("WITA | Could not charge GP."); return false; }
-
+    // GP already charged by Item Piles.
     await enlargeSlot(choice);
     _refreshPanel();
     return false;
@@ -389,8 +525,12 @@ async function _handleFacilityPurchase(item, wf, buyer) {
     const allFac  = getAllFacilities();
     const meta    = allFac[itemId];
     const data    = getBastionData();
-    const tierErr = meta ? validateFacilityDrop(data, meta) : null;
-    if (tierErr) { ui.notifications.warn(`WITA | ${tierErr}`); return false; }
+    const tierErr = meta ? validateFacilityDrop(data, meta, { bypassTier: game.user.isGM }) : null;
+    if (tierErr) {
+        ui.notifications.warn(`WITA | ${tierErr}`);
+        await game.itempiles.API.addCurrencies(buyer, `${gpOnly}gp`);
+        return false;
+    }
 
     const matRows = hasMats
         ? materials.map(m => `<li>${m.qty}× ${sanitizeHTML(m.name)}</li>`).join("")
@@ -415,16 +555,19 @@ async function _handleFacilityPurchase(item, wf, buyer) {
                 </div>
             `,
             buttons: {
-                ok:     { label: "Commission", callback: html => resolve(html[0].querySelector("input[name=pt]:checked")?.value ?? "gpOnly") },
+                ok:     { label: "Commission", callback: html => resolve((html instanceof jQuery ? html[0] : html).querySelector("input[name=pt]:checked")?.value ?? "gpOnly") },
                 cancel: { label: "Cancel",     callback: () => resolve(null) },
             },
             close: () => resolve(null),
         }).render(true);
     });
 
-    if (!choice) return false;
+    if (!choice) {
+        // Player cancelled — refund the GP Item Piles already charged
+        await game.itempiles.API.addCurrencies(buyer, `${gpOnly}gp`);
+        return false;
+    }
 
-    const gpCost     = choice === "gpMats" ? gpMats : gpOnly;
     const useMats    = choice === "gpMats" && hasMats;
     const partyActor = game.actors.get(witaSetting("partyActorId"));
 
@@ -433,18 +576,17 @@ async function _handleFacilityPurchase(item, wf, buyer) {
         const missing = _checkMaterials(partyActor, materials);
         if (missing.length) {
             ui.notifications.warn(`WITA | Missing: ${missing.map(m => `${m.qty}× ${m.name}`).join(", ")}`);
+            // Refund GP since we can't proceed
+            await game.itempiles.API.addCurrencies(buyer, `${gpOnly}gp`);
             return false;
         }
         await _consumeMaterials(partyActor, materials);
+        // Refund the difference (IP charged gpOnly, we only want gpMats)
+        const refund = gpOnly - gpMats;
+        if (refund > 0) await game.itempiles.API.addCurrencies(buyer, `${refund}gp`);
     }
 
-    const gpResult = await game.itempiles.API.removeCurrencies(buyer, `${gpCost}gp`);
-    if (!gpResult) {
-        if (useMats) await _refundMaterials(partyActor, materials);
-        ui.notifications.error(`WITA | Could not charge ${gpCost} GP.`);
-        return false;
-    }
-
+    // GP already charged by Item Piles (gpOnly price on the vendor item).
     await _openSlotDialog(itemId, item, meta);
     return false;
 }
@@ -482,7 +624,7 @@ async function _openSlotDialog(facilityItemId, item, meta) {
                 assign: {
                     label: "Assign",
                     callback: async html => {
-                        const slotId = html[0].querySelector("[name=slotId]").value;
+                        const slotId = (html instanceof jQuery ? html[0] : html).querySelector("[name=slotId]").value;
                         await assignFacilityToSlot(slotId, uuid);
                         ui.notifications.info(`WITA | ${item?.name} assigned to bastion.`);
                         _refreshPanel();
@@ -597,7 +739,7 @@ export async function openCustomFacilityDialog(existingItemId = null) {
             ok: {
                 label: existingItemId ? "Save Changes" : "Create",
                 callback: async html => {
-                    const f = html[0];
+                    const f = html instanceof jQuery ? html[0] : html;
                     const opts = {
                         name:             f.querySelector("[name=name]").value.trim(),
                         subtype:          f.querySelector("[name=subtype]").value.trim(),
@@ -653,8 +795,8 @@ export async function openCustomFacilityDialog(existingItemId = null) {
     // Wire enlargeable toggle.
     Hooks.once("renderDialog", (app, html) => {
         if (app !== dlg) return;
-        const cb     = (html[0] ?? html).querySelector("[name=enlargeable]");
-        const fields = (html[0] ?? html).querySelector("#wita-enlarge-fields");
+        const cb     = (html instanceof jQuery ? html[0] : html).querySelector("[name=enlargeable]");
+        const fields = (html instanceof jQuery ? html[0] : html).querySelector("#wita-enlarge-fields");
         if (cb && fields) {
             cb.addEventListener("change", () => {
                 fields.style.display = cb.checked ? "grid" : "none";
@@ -710,4 +852,122 @@ async function _refundMaterials(actor, materials) {
 function _refreshPanel() {
     const panel = foundry.applications.instances.get("wita-bastion-panel");
     if (panel?.rendered) panel.render(true);
+}
+
+// ── Bastion meta-item seeding ─────────────────────────────────
+
+const WITA_BASTION_META_ITEMS = [
+    {
+        name:        "Bastion Expansion — Tier I",
+        img:         "icons/environment/wilderness/arch-stone.webp",
+        description: "Expands the bastion to Tier I, unlocking Cramped facilities.",
+        metaKey:     "tierUpgrade1",
+        category:    "tierUpgrade",
+        tier:        1,
+    },
+    {
+        name:        "Bastion Expansion — Tier II",
+        img:         "icons/environment/wilderness/arch-stone.webp",
+        description: "Expands the bastion to Tier II, unlocking Roomy facilities.",
+        metaKey:     "tierUpgrade2",
+        category:    "tierUpgrade",
+        tier:        2,
+    },
+    {
+        name:        "Bastion Expansion — Tier III",
+        img:         "icons/environment/wilderness/arch-stone.webp",
+        description: "Expands the bastion to Tier III, unlocking Vast facilities.",
+        metaKey:     "tierUpgrade3",
+        category:    "tierUpgrade",
+        tier:        3,
+    },
+    {
+        name:        "Add Basic Facility Slot",
+        img:         "icons/environment/settlement/house-simple.webp",
+        description: "Adds one new Basic Facility slot to the bastion.",
+        metaKey:     "basicSlot",
+        category:    "slotExpansion",
+        facilityType:"basic",
+    },
+    {
+        name:        "Add Special Facility Slot",
+        img:         "icons/environment/settlement/castle.webp",
+        description: "Adds one new Special Facility slot to the bastion.",
+        metaKey:     "specialSlot",
+        category:    "slotExpansion",
+        facilityType:"special",
+    },
+    {
+        name:        "Enlarge Facility",
+        img:         "icons/environment/settlement/tower-stone.webp",
+        description: "Enlarges an eligible facility up one size (Cramped → Roomy, or Roomy → Vast), increasing its capacity and productivity cap. Requires an available size slot license.",
+        metaKey:     "enlarge",
+        category:    "enlargement",
+    },
+    {
+        name:        "Roomy Slot License",
+        img:         "icons/environment/settlement/house-simple.webp",
+        description: "Grants one additional Roomy size slot, allowing one more facility to be enlarged to Roomy beyond the tier default.",
+        metaKey:     "roomyLicense",
+        category:    "sizeLicense",
+        sizeType:    "roomy",
+    },
+    {
+        name:        "Vast Slot License",
+        img:         "icons/environment/settlement/castle.webp",
+        description: "Grants one additional Vast size slot, allowing one more facility to be enlarged to Vast beyond the tier default.",
+        metaKey:     "vastLicense",
+        category:    "sizeLicense",
+        sizeType:    "vast",
+    },
+];
+
+/**
+ * Seeds the wita.wita-items compendium with Bastion meta-items
+ * if they don't already exist. Called from createEngineerVendor.
+ * Safe to call multiple times — skips existing items.
+ */
+export async function seedBastionMetaItems() {
+    if (!game.user.isGM) return;
+
+    const pack = game.packs.get("wita.wita-items");
+    if (!pack) {
+        console.warn("WITA | wita.wita-items compendium not found, skipping meta-item seeding.");
+        return;
+    }
+
+    const index = await pack.getIndex();
+    const toCreate = [];
+
+    for (const meta of WITA_BASTION_META_ITEMS) {
+        const exists = index.find(i => i.name === meta.name);
+        if (exists) continue;
+
+        toCreate.push({
+            name:  meta.name,
+            type:  "loot",
+            img:   meta.img,
+            system: {
+                description: { value: `<p>${meta.description}</p>`, chat: "" },
+                quantity: 1,
+                price: { value: getMetaCost(meta.metaKey).gpOnly, denomination: "gp" },
+            },
+            flags: {
+                wita: {
+                    engineerCategory: meta.category,
+                    engineerMetaKey:  meta.metaKey,
+                    ...(meta.tier         ? { tier: meta.tier }                 : {}),
+                    ...(meta.facilityType ? { facilityType: meta.facilityType } : {}),
+                    bastionMetaItem:  true,
+                }
+            }
+        });
+    }
+
+    if (toCreate.length > 0) {
+        await Item.createDocuments(toCreate, { pack: "wita.wita-items" });
+        console.log(`WITA | Seeded ${toCreate.length} bastion meta-items into wita.wita-items.`);
+    } else {
+        console.log("WITA | Bastion meta-items already exist in compendium.");
+    }
 }
