@@ -7,6 +7,7 @@ import { MODULE_ID, DANGER_LEVELS, REWARD_LEVELS, QUEST_STATUS, OUTCOME_LABELS }
 import { getQuests, deleteQuest, dispatchQuest, assignActorToQuest,
          unassignActorFromQuest, getDispatchedActorIds } from "../core/quest-data.js";
 import { getCapacity, getGuildhallSlot } from "../core/resolution.js";
+import { getBastionData } from "../../bastion/bastion-data.js"; // used for worker name lookup
 import { sanitizeHTML } from "../../core/utils.js";
 
 const BOARD_ID = "wita-guildhall-board";
@@ -16,7 +17,7 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
     static DEFAULT_OPTIONS = {
         id:       BOARD_ID,
         window:   { resizable: true, title: "Quest Board" },
-        position: { width: 680, height: 560 },
+        position: { width: 720, height: 580 },
         classes:  ["wita-guildhall-board"],
     };
 
@@ -36,7 +37,8 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
     _replaceHTML(result, content, options) {
         const wc = this.element?.querySelector(".window-content");
         if (!wc) return;
-        wc.style.cssText = "padding:0;display:flex;flex-direction:column;overflow:hidden;";
+        wc.style.cssText = "padding:0;display:flex;flex-direction:column;overflow:hidden;height:100%;";
+        result.style.cssText = "display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;";
         wc.replaceChildren(result);
         this._attachListeners(wc);
     }
@@ -52,6 +54,14 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
         const dispatchedIds = getDispatchedActorIds();
         const totalOut      = dispatchedIds.length;
         const activeCount   = quests.filter(q => q.status === QUEST_STATUS.ACTIVE).length;
+
+        // Guildhall-assigned hirelings count
+        const guildhallSlot    = getGuildhallSlot();
+        const bastionData      = game.settings.get("wita", "bastion") ?? {};
+        const guildhallWorkers = guildhallSlot
+            ? (bastionData.workers ?? []).filter(w => (guildhallSlot.workerIds ?? []).includes(w.id))
+            : [];
+        const guildhallCount = guildhallWorkers.length;
 
         const available  = quests.filter(q => q.status === QUEST_STATUS.AVAILABLE);
         const active     = quests.filter(q => q.status === QUEST_STATUS.ACTIVE);
@@ -70,11 +80,14 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
                 ${sanitizeHTML(game.settings.get("wita", "bastionName") ?? "Bastion")} — Quest Board
             </div>
             <div class="wita-gb-capacity">
-                <span title="Hirelings dispatched">
-                    <i class="fas fa-users"></i> ${totalOut} / ${capacity.maxHirelingsOut}
+                <span title="Hirelings in Guildhall">
+                    <i class="fas fa-house-user"></i> ${guildhallCount} in Guildhall
+                </span>
+                <span title="Hirelings dispatched on quests">
+                    <i class="fas fa-users"></i> ${totalOut} / ${capacity.maxHirelingsOut} dispatched
                 </span>
                 <span title="Active quests">
-                    <i class="fas fa-flag"></i> ${activeCount} / ${capacity.maxActiveQuests}
+                    <i class="fas fa-flag"></i> ${activeCount} / ${capacity.maxActiveQuests} quests
                 </span>
                 <button class="wita-gb-btn" id="wita-gb-open-bastion" title="View Guildhall in Bastion Panel">
                     <i class="fas fa-chess-rook"></i> Guildhall
@@ -105,7 +118,7 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
 
         cols.appendChild(this._buildColumn("Available", available, isGM, capacity));
         cols.appendChild(this._buildColumn("Active", active, isGM, capacity));
-        cols.appendChild(this._buildColumn("Completed", completed, isGM, capacity, true));
+        cols.appendChild(this._buildColumn("Completed", completed, isGM, capacity));
 
         frag.appendChild(cols);
 
@@ -126,6 +139,7 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
 
         const list = document.createElement("div");
         list.className = "wita-gb-col-list";
+        list.style.cssText = "overflow-y:auto;flex:1;";
 
         if (quests.length === 0) {
             list.innerHTML = `<div class="wita-gb-empty">No quests</div>`;
@@ -133,6 +147,28 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
             for (const quest of quests) {
                 list.appendChild(this._buildQuestCard(quest, isGM, readonly));
             }
+        }
+
+        // Drop zone — accept quests dragged from other columns
+        const statusMap = { "Available": "available", "Active": "active", "Completed": "completed" };
+        const targetStatus = statusMap[title];
+        if (targetStatus && isGM) {
+            list.addEventListener("dragover", e => { e.preventDefault(); list.classList.add("drag-over"); });
+            list.addEventListener("dragleave", () => list.classList.remove("drag-over"));
+            list.addEventListener("drop", async e => {
+                e.preventDefault();
+                list.classList.remove("drag-over");
+                try {
+                    const { questId } = JSON.parse(e.dataTransfer.getData("text/plain"));
+                    if (!questId) return;
+                    const { updateQuest } = await import("../core/quest-data.js");
+                    const quest = (await import("../core/quest-data.js")).getQuestById(questId);
+                    if (!quest || quest.status === targetStatus) return;
+                    await updateQuest(questId, { status: targetStatus });
+                    const board = foundry.applications.instances.get("wita-guildhall-board");
+                    if (board?.rendered) board.render({ force: true });
+                } catch(err) { console.warn("WITA | Quest drop failed:", err); }
+            });
         }
 
         col.appendChild(list);
@@ -184,7 +220,13 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
             </div>` : ""}
         `;
 
-        card.addEventListener("click", () => {
+        card.setAttribute("draggable", "true");
+        card.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", JSON.stringify({ questId: quest.id }));
+            e.dataTransfer.effectAllowed = "move";
+        });
+        card.addEventListener("click", (e) => {
+            if (e.defaultPrevented) return;
             WITAQuestDetail.open(quest.id, this);
         });
 
@@ -193,14 +235,21 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
 
     _attachListeners(el) {
         // Open bastion panel to guildhall
-        el.querySelector("#wita-gb-open-bastion")?.addEventListener("click", () => {
-            const panel = foundry.applications.instances.get("wita-bastion-panel");
-            if (panel?.rendered) {
-                panel.bringToTop();
-                panel._switchTab?.("facilities", panel.element);
+        el.querySelector("#wita-gb-open-bastion")?.addEventListener("click", async () => {
+            let panel = foundry.applications.instances.get("wita-bastion-panel");
+            if (!panel?.rendered) {
+                // Open the bastion panel — import dynamically to avoid circular deps
+                const { WITABastionPanel } = await import("../../bastion/bastion-panel.js");
+                panel = new WITABastionPanel();
+                await panel.render({ force: true });
+                // Wait a tick for DOM to be ready
+                await new Promise(r => setTimeout(r, 100));
             } else {
-                game.wita?.openPanel?.();
+                panel.bringToTop();
             }
+            // Switch to facilities tab using window-content as container
+            const wc = panel.element?.querySelector(".window-content");
+            if (wc) panel._switchTab?.("facilities", wc);
         });
 
         // GM: new quest
@@ -352,10 +401,44 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
             <div class="wita-qd-assign-row">
                 <select id="wita-qd-actor-sel">
                     <option value="">— Assign a hireling —</option>
-                    ${game.actors
-                        .filter(a => (a.type === "npc" || a.type === "character") && !dispatched.includes(a.id) && !quest.assignedActorIds.includes(a.id))
-                        .map(a => { const r = a.type === "npc" ? `CR ${a.system?.details?.cr ?? "?"}` : `Lv ${a.system?.details?.level ?? "?"}`; return `<option value="${a.id}">${sanitizeHTML(a.name)} (${r})</option>`; })
-                        .join("")}
+                    ${(() => {
+                        // Build eligible set from Guildhall slot workers
+                        const gSlot = getGuildhallSlot();
+                        const gData = game.settings.get("wita", "bastion") ?? {};
+                        const gWorkers = gSlot
+                            ? (gData.workers ?? []).filter(w => (gSlot.workerIds ?? []).includes(w.id))
+                            : [];
+
+                        const eligibleIds = new Set();
+                        for (const w of gWorkers) {
+                            if (w.actorId) {
+                                eligibleIds.add(w.actorId);
+                            } else {
+                                // Name fallback — prefer character type for PCs like Selune
+                                const matches = game.actors.filter(a => a.name === w.name);
+                                const match = matches.find(a => a.type === "character")
+                                           ?? matches.find(a => a.type === "npc")
+                                           ?? matches[0];
+                                if (match) eligibleIds.add(match.id);
+                            }
+                        }
+
+                        return game.actors
+                            .filter(a => {
+                                if (dispatched.includes(a.id)) return false;
+                                if (quest.assignedActorIds.includes(a.id)) return false;
+                                if (a.type !== "npc" && a.type !== "character") return false;
+                                if (eligibleIds.size === 0) return true;
+                                return eligibleIds.has(a.id);
+                            })
+                            .map(a => {
+                                const r = a.type === "npc"
+                                    ? `CR ${a.system?.details?.cr ?? "?"}`
+                                    : `Lv ${a.system?.details?.level ?? "?"}`;
+                                return `<option value="${a.id}">${sanitizeHTML(a.name)} (${r})</option>`;
+                            })
+                            .join("");
+                    })()}
                 </select>
                 <button class="wita-detail-micro-btn" id="wita-qd-assign-btn">Assign</button>
             </div>` : ""}
@@ -413,7 +496,7 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
 
         // Dispatch quest
         el.querySelector("#wita-qd-dispatch")?.addEventListener("click", async () => {
-            const turnNumber = game.settings.get("wita", "bastionTurnNumber") ?? 0;
+            const turnNumber = (game.settings.get("wita", "bastionState")?.turnNumber ?? 0);
             await dispatchQuest(questId, turnNumber);
             ui.notifications.info("Quest dispatched — resolves at next bastion turn.");
             await refresh();

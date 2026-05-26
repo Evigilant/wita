@@ -11,13 +11,11 @@ export const WITA_COMBAT_SETTINGS = [
 
 // TODO(v14): migrate to ApplicationV2
 export class WITACombatConfig extends WITAConfigBase {
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: "⚔️ WITA — Combat Logging",
-            id: "wita-combat-config",
-            width: 440,
-        });
-    }
+    static DEFAULT_OPTIONS = {
+        window:   { resizable: false, title: "⚔️ WITA — Combat Logging" },
+        id:       "wita-combat-config",
+        position: { width: 440, height: "auto" },
+    };
 
     get fields() {
         return [

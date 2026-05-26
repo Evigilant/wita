@@ -5,24 +5,27 @@
 import { WITAConfigBase } from "./settings-base.js";
 
 export const WITA_BASTION_SETTINGS = [
-    { key: "bastionName",        type: String, default: "Von Valancius Bastion" },
-    { key: "seneschalActorId",   type: String, default: "" },
-    { key: "longRestsPerTurn",   type: Number, default: 7  },
-    { key: "maxDetailedReports", type: Number, default: 2  },
-    { key: "anthropicApiKey",    type: String, default: "" },
-    { key: "tierRoomyLimits",    type: String, default: '{"1":1,"2":2,"3":4}' },
-    { key: "tierVastLimits",     type: String, default: '{"1":0,"2":1,"3":2}' },
+    { key: "bastionName",              type: String, default: "Von Valancius Bastion"        },
+    { key: "seneschalActorId",         type: String, default: ""                             },
+    { key: "questBoardActorId",        type: String, default: ""                             },
+    { key: "maxHirelingsOverride",     type: Number, default: 0                              },
+    { key: "maxActiveQuestsOverride",  type: Number, default: 0                              },
+    { key: "longRestsPerTurn",         type: Number, default: 7                              },
+    { key: "maxDetailedReports",       type: Number, default: 2                              },
+    { key: "anthropicApiKey",          type: String, default: ""                             },
+    { key: "tierRoomyLimits",          type: String, default: '{"1":1,"2":2,"3":4}'          },
+    { key: "tierVastLimits",           type: String, default: '{"1":0,"2":1,"3":2}'          },
+    { key: "guildhallQuests",          type: Array,  default: []                             },
+    { key: "guildhallConfig",          type: Object, default: {}                             },
 ];
 
 // TODO(v14): migrate to ApplicationV2
 export class WITABastionConfig extends WITAConfigBase {
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: "🏰 WITA — Bastion Automation",
-            id: "wita-bastion-config",
-            width: 440,
-        });
-    }
+    static DEFAULT_OPTIONS = {
+        window:   { resizable: false, title: "🏰 WITA — Bastion Automation" },
+        id:       "wita-bastion-config",
+        position: { width: 440, height: "auto" },
+    };
     get fields() {
         return [
             { type: "section", label: "General" },
@@ -57,6 +60,27 @@ export class WITABastionConfig extends WITAConfigBase {
                 type: "Number",
                 min: 1, max: 30, step: 1,
                 hint: "How many long rests trigger a bastion turn. Default 7 = one in-game week.",
+            },
+            { type: "section", label: "Guildhall & Quest Board" },
+            {
+                key: "questBoardActorId",
+                label: "Quest Board Actor ID / UUID",
+                type: "String",
+                hint: "Actor ID or full UUID of the NPC that opens the Quest Board when interacted with.",
+            },
+            {
+                key: "maxHirelingsOverride",
+                label: "Max Hirelings Out (Override)",
+                type: "Number",
+                min: 0, max: 50, step: 1,
+                hint: "Maximum hirelings dispatched simultaneously. Leave 0 to derive from Guildhall size (Cramped=4, Roomy=8, Vast=12).",
+            },
+            {
+                key: "maxActiveQuestsOverride",
+                label: "Max Active Quests (Override)",
+                type: "Number",
+                min: 0, max: 20, step: 1,
+                hint: "Maximum quests active at once. Leave 0 to derive from Guildhall size (Cramped=2, Roomy=4, Vast=6).",
             },
             { type: "section", label: "Reports" },
             {

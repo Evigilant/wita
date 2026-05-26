@@ -9,13 +9,11 @@ export const WITA_POTION_SETTINGS = [];
 
 // TODO(v14): migrate to ApplicationV2
 export class WITAPotionConfig extends WITAConfigBase {
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: "⚗️ WITA — Potion Brewing",
-            id: "wita-potion-config",
-            width: 480,
-        });
-    }
+    static DEFAULT_OPTIONS = {
+        window:   { resizable: false, title: "⚗️ WITA — Potion Brewing" },
+        id:       "wita-potion-config",
+        position: { width: 480, height: "auto" },
+    };
 
     get fields() {
         return [

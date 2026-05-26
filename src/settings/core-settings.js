@@ -17,13 +17,11 @@ export const WITA_CORE_SETTINGS = [
 
 // TODO(v14): migrate to ApplicationV2
 export class WITACoreConfig extends WITAConfigBase {
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: "⚙️ WITA — Core Configuration",
-            id: "wita-core-config",
-            width: 480,
-        });
-    }
+    static DEFAULT_OPTIONS = {
+        window:   { resizable: false, title: "⚙️ WITA — Core Configuration" },
+        id:       "wita-core-config",
+        position: { width: 480, height: "auto" },
+    };
 
     get fields() {
         return [

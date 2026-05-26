@@ -11,13 +11,11 @@ export const WITA_FINANCIAL_SETTINGS = [
 
 // TODO(v14): migrate to ApplicationV2
 export class WITAFinancialConfig extends WITAConfigBase {
-    static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
-            title: "💰 WITA — Financial System",
-            id: "wita-financial-config",
-            width: 440,
-        });
-    }
+    static DEFAULT_OPTIONS = {
+        window:   { resizable: false, title: "💰 WITA — Financial System" },
+        id:       "wita-financial-config",
+        position: { width: 440, height: "auto" },
+    };
 
     get fields() {
         return [

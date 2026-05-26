@@ -29,10 +29,10 @@ function _registerTurnHook() {
 
     Hooks.on("updateSetting", async (setting) => {
         if (setting.namespace !== "wita") return;
-        if (setting.key !== "bastionTurnNumber") return;
+        if (setting.key !== "bastionState") return;
         if (!game.user.isGM) return;
 
-        const newTurn = witaSetting("bastionTurnNumber") ?? 0;
+        const newTurn = (witaSetting("bastionState")?.turnNumber ?? 0);
         if (_lastTurn === null) { _lastTurn = newTurn; return; }
         if (newTurn <= _lastTurn) { _lastTurn = newTurn; return; }
 
@@ -60,8 +60,10 @@ function _registerOrderIntercept() {
 
 function _registerContextMenu() {
     Hooks.on("getTokenContextOptions", (token, options) => {
-        const actorId = game.settings.get("wita", "questBoardActorId");
-        if (!actorId || token.document?.actorId !== actorId) return;
+        const stored = game.settings.get("wita", "questBoardActorId");
+        if (!stored) return;
+        const tActorId = token.document?.actorId ?? "";
+        if (!stored.includes(tActorId) && stored !== tActorId) return;
         options.unshift({
             name:     "Open Quest Board",
             icon:     "<i class='fas fa-scroll'></i>",
@@ -72,65 +74,68 @@ function _registerContextMenu() {
 
 // ── NPC sheet intercept ───────────────────────────────────────
 
+function _isQuestBoardActor(actor) {
+    if (!actor) return false;
+    const stored = game.settings.get("wita", "questBoardActorId");
+    if (!stored) return false;
+    const id   = actor.id   ?? "";
+    const uuid = actor.uuid ?? "";
+    return stored === id || stored === uuid
+        || uuid.includes(stored) || stored.includes(id);
+}
+
+function _isQuestBoardApp(app) {
+    return _isQuestBoardActor(app.document ?? app.actor);
+}
+
 function _registerSeneschalIntercept() {
-    // Inject header button into the quest board NPC's sheet
+    // Cannot use libWrapper here — bastion-panel.js already registers "wita" on
+    // NPCActorSheet.prototype.render and libWrapper rejects duplicate package registrations.
+    // Use render hooks instead — same as the Seneschal fallback path.
+
+    const _closeAndOpen = (app) => {
+        if (!_isQuestBoardApp(app)) return;
+        // Hide immediately to prevent flash, then close and open quest board
+        if (app.element) app.element.style.display = "none";
+        setTimeout(() => { app.close(); WITAQuestBoard.open(); }, 0);
+    };
+
+    Hooks.on("renderActorSheetV2",   _closeAndOpen);
+    Hooks.on("renderNPCActorSheet",  _closeAndOpen);
+    Hooks.on("renderBaseActorSheet", _closeAndOpen);
+
+    // Also hook the Seneschal's existing libWrapper intercept via wita.preSetFacilityOrder
+    // won't help here — instead piggyback on the Seneschal's renderActorSheet hook check
     Hooks.on("renderActorSheet", (sheet, html) => {
-        const actorId = game.settings.get("wita", "questBoardActorId");
-        if (!actorId) return;
-        const actor = sheet.document ?? sheet.actor;
-        if (actor?.id !== actorId) return;
-        if (sheet._witaQuestBoardBypass) return;
-
+        if (!_isQuestBoardApp(sheet)) return;
         const el = html instanceof HTMLElement ? html : html[0];
-        if (!el || el.querySelector("#wita-open-quest-board-btn")) return;
-
+        if (!el) return;
+        // Inject quest board button into sheet header
+        if (el.querySelector("#wita-open-quest-board-btn")) return;
         const header = el.closest(".app")?.querySelector(".window-header") ??
                        el.querySelector(".window-header");
         if (!header) return;
-
         const btn = document.createElement("button");
         btn.id        = "wita-open-quest-board-btn";
         btn.type      = "button";
         btn.className = "header-control fa-solid fa-scroll";
         btn.setAttribute("data-tooltip", "Open Quest Board");
         btn.style.cssText = "border:none;background:none;cursor:pointer;font-size:1rem;color:var(--color-highlights)";
-        btn.addEventListener("click", e => {
-            e.preventDefault(); e.stopPropagation();
-            WITAQuestBoard.open();
-        });
-
+        btn.addEventListener("click", e => { e.preventDefault(); e.stopPropagation(); WITAQuestBoard.open(); });
         const ellipsis = header.querySelector(".fa-ellipsis-vertical");
         if (ellipsis) ellipsis.before(btn);
         else header.appendChild(btn);
     });
-
-    // Intercept sheet open to redirect to Quest Board — use libWrapper
-    // Only registers if the questBoardActorId setting is set
-    try {
-        libWrapper.register("wita", "dnd5e.applications.actor.NPCActorSheet.prototype.render",
-            function(wrapped, force, options = {}) {
-                const actorId = game.settings.get("wita", "questBoardActorId");
-                if (!actorId || this.document?.id !== actorId) return wrapped(force, options);
-                if (options._witaQuestBoardBypass) return wrapped(force, options);
-                WITAQuestBoard.open();
-                // Suppress sheet render — player sees quest board instead
-            }, "MIXED"
-        );
-    } catch(e) {
-        console.warn("WITA | Guildhall: libWrapper registration failed —", e.message);
-    }
 }
 
 // ── Public API ────────────────────────────────────────────────
 
 function _registerPublicAPI() {
-    // Extend game.wita with guildhall API — called after game.wita is set up in main.js
-    Hooks.once("ready", () => {
-        if (!game.wita) return;
-        game.wita.guildhall = {
-            openBoard:  () => WITAQuestBoard.open(),
-            getQuests,
-            resolveNow: () => resolveActiveQuests(witaSetting("bastionTurnNumber") ?? 0),
-        };
-    });
+    // Set directly — registerGuildhall() is already called inside Hooks.once("ready")
+    if (!game.wita) game.wita = {};
+    game.wita.guildhall = {
+        openBoard:  () => WITAQuestBoard.open(),
+        getQuests,
+        resolveNow: () => resolveActiveQuests((witaSetting("bastionState")?.turnNumber ?? 0)),
+    };
 }

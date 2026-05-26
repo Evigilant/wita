@@ -40,7 +40,6 @@ registerSocket(executeLootAndHarvest);
 // ── Public API ────────────────────────────────────────────────
 Hooks.once("ready", () => {
     registerBastionPanel();
-    registerGuildhall();
     game.wita = {
         potion:   WITA_POTION_CRAFTING,
         crafting: WITA_CRAFTING,
@@ -49,6 +48,7 @@ Hooks.once("ready", () => {
     };
     game.wita.bastion.handleEngineerPurchase   = handleEngineerPurchase;
     game.wita.bastion.openCustomFacilityDialog = openCustomFacilityDialog;
+    registerGuildhall(); // must run after game.wita is assigned
 
     console.log("WITA | Bastion debug tools available:");
     console.log("  WITA_BASTION.triggerTurn()     — manually trigger a bastion turn");

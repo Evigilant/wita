@@ -15,7 +15,7 @@ Hooks.once("init", () => {
 
     // Placeholder so the WITA category appears in the settings list
     game.settings.register("wita", "_placeholder", {
-        scope: "world", config: true, type: Boolean, default: false, name: " ", hint: " ",
+        scope: "client", config: true, type: Boolean, default: false, name: " ", hint: " ",
     });
 
     // Feature toggles
@@ -25,7 +25,7 @@ Hooks.once("init", () => {
         ["enableCombatLogging",     true],
         ["enablePotionBrewing",     true],
     ]) {
-        game.settings.register("wita", key, { scope: "world", config: false, type: Boolean, default: def });
+        game.settings.register("wita", key, { scope: "client", config: false, type: Boolean, default: def });
     }
 
     // Descriptor-array settings
@@ -37,18 +37,18 @@ Hooks.once("init", () => {
         ...WITA_POTION_SETTINGS,
     ]) {
         game.settings.register("wita", s.key, {
-            scope: "world", config: false, type: s.type, default: s.default,
+            scope: "client", config: false, type: s.type, default: s.default,
         });
     }
 
     // Internal bastion state
     game.settings.register("wita", "bastionState", {
-        scope: "world",
+        scope: "client",
         config: false,
         default: { longRestCount: 0, turnNumber: 0, pendingFluctuationType: null },
     });
-    game.settings.register("wita", "bastion", { scope: "world", config: false, type: Object, default: {} });
-    game.settings.register("wita", "engineeringCosts", { scope: "world", config: false, type: Object, default: {} });
+    game.settings.register("wita", "bastion", { scope: "client", config: false, type: Object, default: {} });
+    game.settings.register("wita", "engineeringCosts", { scope: "client", config: false, type: Object, default: {} });
 
     console.log("WITA | Settings registered.");
 });

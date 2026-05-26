@@ -715,15 +715,20 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
                 hDropZone.classList.remove("drag-over");
                 let dd;
                 try { dd = JSON.parse(e.dataTransfer.getData("text/plain")); } catch { return; }
-                let name = "Hireling", role = "";
+                let name = "Hireling", role = "", actorId = null;
                 if (dd.type === "Actor") {
                     const actor = dd.uuid ? await fromUuid(dd.uuid) : game.actors.get(dd.id);
-                    if (actor) { name = actor.name; role = actor.system?.details?.race?.value ?? actor.system?.details?.type?.value ?? ""; }
+                    if (actor) {
+                        name    = actor.name;
+                        role    = actor.system?.details?.race?.value ?? actor.system?.details?.type?.value ?? "";
+                        actorId = actor.id;
+                    }
                 } else if (dd.type === "Token") {
                     const token = dd.uuid ? await fromUuid(dd.uuid) : null;
-                    name = token?.name ?? token?.actor?.name ?? "Hireling";
+                    name    = token?.name ?? token?.actor?.name ?? "Hireling";
+                    actorId = token?.actor?.id ?? null;
                 }
-                await createWorker({ name, role });
+                await createWorker({ name, role, actorId });
                 await this.render({ force: true });
             }, true);
             el.appendChild(hDropZone);

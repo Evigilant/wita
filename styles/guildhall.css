@@ -17,7 +17,8 @@
 .wita-gb-body {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     font-family: var(--font-primary, "Signika");
     color: var(--color-form-label);
@@ -90,6 +91,7 @@
     gap: 0;
     flex: 1;
     overflow: hidden;
+    min-height: 0;
 }
 
 .wita-gb-col {
@@ -97,6 +99,7 @@
     flex-direction: column;
     border-right: 1px solid var(--color-fieldset-border);
     overflow: hidden;
+    min-height: 0;
 }
 .wita-gb-col:last-child { border-right: none; }
 
@@ -408,3 +411,12 @@
 .wita-qi-name { flex: 1; font-size: 0.75rem; }
 .wita-qi-status { font-size: 0.6rem; color: var(--color-form-hint); }
 .wita-qi-empty { text-align: center; padding: 1rem; color: var(--color-form-hint); font-style: italic; }
+
+/* ── Drag and drop ─────────────────────────────────────────── */
+.wita-gb-card[draggable="true"] { cursor: grab; }
+.wita-gb-card[draggable="true"]:active { cursor: grabbing; }
+.wita-gb-col-list.drag-over {
+    background: var(--color-highlights-15);
+    border: 1px dashed var(--color-highlights);
+    border-radius: 4px;
+}

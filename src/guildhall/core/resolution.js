@@ -15,9 +15,7 @@ import { getQuests, updateQuest, getGuildhallSettings } from "./quest-data.js";
 
 export function getGuildhallSlot() {
     try {
-        const { getBastionData } = game.modules.get("wita")?.api ?? {};
-        if (!getBastionData) return null;
-        const data = getBastionData();
+        const data = game.settings.get("wita", "bastion") ?? {};
         const slots = [...(data.basicSlots ?? []), ...(data.specialSlots ?? [])];
         return slots.find(s => s.facilityItemId === GUILDHALL_ITEM_ID) ?? null;
     } catch { return null; }
@@ -176,7 +174,7 @@ async function applyHirelingResults(results, outcome) {
             // Remove actor from world (GM confirmed this is intended)
             // We flag rather than delete — GM can review and delete manually
             await r.actor.setFlag(MODULE_ID, "questResult", {
-                status: "Killed", turnKilled: witaSetting("bastionTurnNumber") ?? 0,
+                status: "Killed", turnKilled: (witaSetting("bastionState")?.turnNumber ?? 0),
             });
             continue;
         }
@@ -193,7 +191,7 @@ async function applyHirelingResults(results, outcome) {
             await r.actor.setFlag(MODULE_ID, "questResult", {
                 status:    r.status,
                 restWeeks: r.restWeeks,
-                restUntilTurn: (witaSetting("bastionTurnNumber") ?? 0) + r.restWeeks,
+                restUntilTurn: ((witaSetting("bastionState")?.turnNumber ?? 0)) + r.restWeeks,
             });
         } else {
             // Clear any previous injury flag

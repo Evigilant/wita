@@ -1,10 +1,10 @@
 // ============================================================
 // WITA Guildhall — guildhall-settings.js
-// Settings registration integrated into wita module
+// Data store settings only — UI settings are in bastion-settings.js
 // ============================================================
 
 export function registerGuildhallSettings() {
-    // Quest data store — keyed under wita namespace
+    // Quest data store
     game.settings.register("wita", "guildhallQuests", {
         name:    "Guildhall Quests",
         scope:   "world",
@@ -13,6 +13,7 @@ export function registerGuildhallSettings() {
         default: [],
     });
 
+    // Guildhall config store
     game.settings.register("wita", "guildhallConfig", {
         name:    "Guildhall Configuration",
         scope:   "world",
@@ -21,30 +22,7 @@ export function registerGuildhallSettings() {
         default: {},
     });
 
-    game.settings.register("wita", "questBoardActorId", {
-        name:    "Quest Board Actor",
-        hint:    "Actor ID of the NPC that opens the Quest Board when interacted with.",
-        scope:   "world",
-        config:  true,
-        type:    String,
-        default: "",
-    });
-
-    game.settings.register("wita", "maxHirelingsOverride", {
-        name:    "Max Hirelings Out (Override)",
-        hint:    "Leave 0 to derive from Guildhall facility size. Set to override.",
-        scope:   "world",
-        config:  true,
-        type:    Number,
-        default: 0,
-    });
-
-    game.settings.register("wita", "maxActiveQuestsOverride", {
-        name:    "Max Active Quests (Override)",
-        hint:    "Leave 0 to derive from Guildhall facility size. Set to override.",
-        scope:   "world",
-        config:  true,
-        type:    Number,
-        default: 0,
-    });
+    // NOTE: questBoardActorId, maxHirelingsOverride, maxActiveQuestsOverride
+    // are registered by WITA_BASTION_SETTINGS in bastion-settings.js
+    // and displayed in the WITABastionConfig panel under "Guildhall & Quest Board"
 }
