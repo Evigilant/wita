@@ -1,0 +1,410 @@
+/* ============================================================
+   WITA Guildhall — guildhall.css
+   Uses Carolingian UI CSS variables exclusively.
+   ============================================================ */
+
+/* ── Quest Board window ───────────────────────────────────── */
+.wita-guildhall-board .window-content,
+.wita-guildhall-detail .window-content,
+.wita-guildhall-create .window-content,
+.wita-guildhall-import .window-content {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.wita-gb-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-primary, "Signika");
+    color: var(--color-form-label);
+    font-size: 0.78rem;
+}
+
+/* ── Board header ────────────────────────────────────────── */
+.wita-gb-header {
+    padding: 0.5rem 0.65rem 0.4rem;
+    border-bottom: 1px solid var(--color-fieldset-border);
+    flex-shrink: 0;
+}
+
+.wita-gb-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--color-highlights);
+    margin-bottom: 0.3rem;
+}
+
+.wita-gb-capacity {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--color-form-hint);
+}
+
+.wita-gb-gm-bar {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    flex-wrap: wrap;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.wita-gb-btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--color-form-label);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    white-space: nowrap;
+}
+.wita-gb-btn:hover {
+    background: var(--color-highlights-15);
+    color: var(--color-highlights);
+    border-color: var(--color-highlights);
+}
+.wita-gb-btn.primary {
+    background: var(--color-highlights);
+    color: #fff;
+    border-color: var(--color-highlights);
+}
+.wita-gb-btn.primary:hover {
+    background: var(--color-highlights-75);
+}
+.wita-gb-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Three columns ───────────────────────────────────────── */
+.wita-gb-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.wita-gb-col {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--color-fieldset-border);
+    overflow: hidden;
+}
+.wita-gb-col:last-child { border-right: none; }
+
+.wita-gb-col-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-form-hint);
+    border-bottom: 1px solid var(--color-fieldset-border);
+    flex-shrink: 0;
+}
+
+.wita-gb-col-count {
+    background: var(--color-fieldset-border);
+    border-radius: 8px;
+    padding: 0 0.35rem;
+    font-size: 0.6rem;
+}
+
+.wita-gb-col-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    scrollbar-width: thin;
+}
+
+.wita-gb-empty {
+    text-align: center;
+    padding: 1rem 0.5rem;
+    color: var(--color-form-hint);
+    font-size: 0.7rem;
+    font-style: italic;
+}
+
+/* ── Quest cards ─────────────────────────────────────────── */
+.wita-gb-card {
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 4px;
+    padding: 0.4rem 0.5rem;
+    cursor: pointer;
+    transition: background 0.1s, border-color 0.1s;
+    background: transparent;
+}
+.wita-gb-card:hover {
+    background: var(--color-highlights-15);
+    border-color: var(--color-highlights);
+}
+.wita-gb-card.failed {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.wita-gb-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.3rem;
+    margin-bottom: 0.2rem;
+}
+.wita-gb-card-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-form-label);
+    line-height: 1.3;
+}
+.wita-gb-card-badges {
+    display: flex;
+    gap: 0.2rem;
+    flex-shrink: 0;
+}
+.wita-gb-source-badge {
+    font-size: 0.55rem;
+    padding: 0.05rem 0.25rem;
+    border-radius: 2px;
+    background: var(--color-fieldset-border);
+    color: var(--color-form-hint);
+}
+.wita-gb-outcome-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+}
+
+.wita-gb-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: 0.62rem;
+    color: var(--color-form-hint);
+}
+
+.wita-gb-reward-label { color: var(--color-form-hint); }
+.wita-gb-hirelings { color: var(--color-form-hint); }
+.wita-gb-card-slots { font-size: 0.6rem; color: var(--color-form-hint); margin-top: 0.15rem; }
+.wita-gb-slots-label {}
+
+/* ── Quest detail ─────────────────────────────────────────── */
+.wita-guildhall-detail .window-content { overflow: visible; }
+
+.wita-qd-body {
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    font-family: var(--font-primary, "Signika");
+    color: var(--color-form-label);
+    font-size: 0.78rem;
+}
+
+.wita-qd-top-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.wita-qd-danger { font-size: 0.78rem; font-weight: 600; margin-bottom: 0.15rem; }
+.wita-qd-reward { font-size: 0.72rem; color: var(--color-form-hint); margin-bottom: 0.15rem; }
+.wita-qd-source { font-size: 0.65rem; color: var(--color-form-hint); }
+.wita-qd-source-link { color: var(--color-highlights); cursor: pointer; margin-left: 0.25rem; }
+
+.wita-qd-gm-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.68rem;
+}
+.wita-qd-gm-meta label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    color: var(--color-form-hint);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.wita-qd-gm-meta select {
+    background: var(--color-cool-5);
+    color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.1rem 0.25rem;
+    font-size: 0.68rem;
+}
+
+.wita-qd-section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-form-hint);
+    border-bottom: 1px solid var(--color-fieldset-border);
+    padding-bottom: 0.15rem;
+}
+
+.wita-qd-desc {
+    font-size: 0.73rem;
+    line-height: 1.5;
+    max-height: 120px;
+    overflow-y: auto;
+    color: var(--color-form-label);
+}
+.wita-qd-desc p { margin: 0 0 0.3rem; }
+
+.wita-qd-hirelings { display: flex; flex-direction: column; gap: 0.2rem; }
+.wita-qd-hireling-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0;
+}
+.wita-qd-hireling-img {
+    width: 24px; height: 24px;
+    border-radius: 50%; object-fit: cover; flex-shrink: 0;
+    border: 1px solid var(--color-fieldset-border);
+}
+.wita-qd-hireling-name { flex: 1; font-weight: 600; font-size: 0.75rem; }
+.wita-qd-hireling-type { font-size: 0.62rem; color: var(--color-form-hint); }
+.wita-qd-empty-hirelings { font-size: 0.68rem; color: var(--color-form-hint); font-style: italic; }
+
+.wita-qd-assign-row {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+.wita-qd-assign-row select {
+    flex: 1;
+    background: var(--color-cool-5);
+    color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.15rem 0.3rem;
+    font-size: 0.7rem;
+}
+
+.wita-qd-outcome {
+    font-size: 0.82rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+}
+.wita-qd-roll-detail {
+    font-size: 0.65rem;
+    color: var(--color-form-hint);
+    margin-bottom: 0.3rem;
+}
+.wita-qd-hireling-result {
+    font-size: 0.7rem;
+    padding: 0.1rem 0;
+    color: var(--color-form-label);
+}
+
+.wita-qd-rewards { font-size: 0.72rem; padding-left: 1.2rem; margin: 0; color: var(--color-form-hint); }
+
+.wita-qd-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--color-fieldset-border);
+    flex-wrap: wrap;
+}
+.wita-qd-active-note {
+    font-size: 0.68rem;
+    color: var(--color-form-hint);
+    font-style: italic;
+}
+
+/* ── Quest create ─────────────────────────────────────────── */
+.wita-guildhall-create .window-content,
+.wita-guildhall-import .window-content { overflow: visible; }
+
+.wita-qc-body, .wita-qi-body {
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-family: var(--font-primary, "Signika");
+    color: var(--color-form-label);
+    font-size: 0.78rem;
+}
+
+.wita-qc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.wita-qc-field label {
+    font-size: 0.62rem;
+    color: var(--color-form-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.wita-qc-field input,
+.wita-qc-field textarea,
+.wita-qc-field select {
+    background: var(--color-cool-5);
+    color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+}
+.wita-qc-field textarea { resize: vertical; }
+
+.wita-qc-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.wita-qc-footer, .wita-qi-footer {
+    display: flex;
+    gap: 0.35rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--color-fieldset-border);
+}
+
+/* ── Import picker ─────────────────────────────────────────── */
+.wita-qi-hint { font-size: 0.68rem; color: var(--color-form-hint); margin: 0 0 0.3rem; }
+
+.wita-qi-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.wita-qi-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.35rem;
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.wita-qi-row:hover { background: var(--color-highlights-15); }
+.wita-qi-row.imported { opacity: 0.4; cursor: not-allowed; }
+
+.wita-qi-name { flex: 1; font-size: 0.75rem; }
+.wita-qi-status { font-size: 0.6rem; color: var(--color-form-hint); }
+.wita-qi-empty { text-align: center; padding: 1rem; color: var(--color-form-hint); font-style: italic; }

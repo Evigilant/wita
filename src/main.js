@@ -27,7 +27,7 @@ import { registerBastionPanel }         from "./bastion/bastion-panel.js";
 import { handleEngineerPurchase,
          openCustomFacilityDialog }     from "./bastion/bastion-engineer.js";
 
-
+import { registerGuildhall } from "./guildhall/guildhall-main.js";
 
 
 // ── Combat log (registers all combat hooks as side effect) ────
@@ -40,6 +40,7 @@ registerSocket(executeLootAndHarvest);
 // ── Public API ────────────────────────────────────────────────
 Hooks.once("ready", () => {
     registerBastionPanel();
+    registerGuildhall();
     game.wita = {
         potion:   WITA_POTION_CRAFTING,
         crafting: WITA_CRAFTING,
