@@ -4,7 +4,7 @@
 // ============================================================
 
 import { MODULE_ID, DANGER_LEVELS, REWARD_LEVELS, QUEST_STATUS, OUTCOME_LABELS } from "../core/config.js";
-import { getQuests, deleteQuest, dispatchQuest, assignActorToQuest,
+import { getQuests, getQuestById, deleteQuest, dispatchQuest, assignActorToQuest,
          unassignActorFromQuest, getDispatchedActorIds } from "../core/quest-data.js";
 import { getCapacity, getGuildhallSlot } from "../core/resolution.js";
 import { getBastionData } from "../../bastion/bastion-data.js"; // used for worker name lookup
@@ -357,6 +357,17 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
         })() : "";
 
         return `
+            ${isGM && !isDone ? `
+            <div class="wita-qd-name-row">
+                <input type="text" id="wita-qd-name-input"
+                    value="${sanitizeHTML(quest.name)}"
+                    placeholder="Quest name"
+                    style="width:100%;font-size:0.88rem;font-weight:600;background:transparent;
+                           border:none;border-bottom:1px solid var(--color-fieldset-border);
+                           color:var(--color-form-label);padding:0.1rem 0;margin-bottom:0.4rem;
+                           font-family:inherit">
+            </div>` : `
+            <div class="wita-qd-name-static">${sanitizeHTML(quest.name)}</div>`}
             <div class="wita-qd-top-row">
                 <div>
                     <div class="wita-qd-danger" style="color:${danger.colour}">
@@ -512,6 +523,15 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
             const { updateQuest } = await import("../core/quest-data.js");
             await updateQuest(questId, { rewardLevel: parseInt(e.target.value) });
             await refresh();
+        });
+
+        // Name edit
+        el.querySelector("#wita-qd-name-input")?.addEventListener("change", async (e) => {
+            const newName = e.target.value.trim();
+            if (!newName) { e.target.value = getQuestById(questId)?.name ?? ""; return; }
+            const { updateQuest } = await import("../core/quest-data.js");
+            await updateQuest(questId, { name: newName });
+            await board?.render({ force: true });
         });
 
         // Source link

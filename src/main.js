@@ -28,6 +28,7 @@ import { handleEngineerPurchase,
          openCustomFacilityDialog }     from "./bastion/bastion-engineer.js";
 
 import { registerGuildhall } from "./guildhall/guildhall-main.js";
+import { rollRandomEncounters, registerEncounterChatHook } from "./encounters/encounters.js";
 
 
 // ── Combat log (registers all combat hooks as side effect) ────
@@ -49,6 +50,9 @@ Hooks.once("ready", () => {
     game.wita.bastion.handleEngineerPurchase   = handleEngineerPurchase;
     game.wita.bastion.openCustomFacilityDialog = openCustomFacilityDialog;
     registerGuildhall(); // must run after game.wita is assigned
+    registerEncounterChatHook();
+    // Expose encounter roller on game.wita
+    game.wita.rollEncounters = rollRandomEncounters;
 
     console.log("WITA | Bastion debug tools available:");
     console.log("  WITA_BASTION.triggerTurn()     — manually trigger a bastion turn");

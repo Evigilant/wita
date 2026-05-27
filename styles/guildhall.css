@@ -420,3 +420,50 @@
     border: 1px dashed var(--color-highlights);
     border-radius: 4px;
 }
+
+/* ── Encounter convert dialog ────────────────────────────────── */
+.wita-encounter-convert .window-content { padding: 0; overflow: visible; }
+
+.wita-ec-body {
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-family: var(--font-primary, "Signika");
+    color: var(--color-form-label);
+    font-size: 0.78rem;
+}
+.wita-ec-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.wita-ec-field label {
+    font-size: 0.62rem;
+    color: var(--color-form-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.wita-ec-field input,
+.wita-ec-field textarea,
+.wita-ec-field select {
+    background: var(--color-cool-5);
+    color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+}
+.wita-ec-field textarea { resize: vertical; }
+.wita-ec-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+.wita-ec-footer {
+    display: flex;
+    gap: 0.35rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--color-fieldset-border);
+}
