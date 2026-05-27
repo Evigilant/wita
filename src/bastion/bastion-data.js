@@ -67,7 +67,7 @@ export const WITA_ORDER_ICON = {
 
 export const WITA_ORDER_LABEL = {
     craft: "Craft", trade: "Trade", research: "Research",
-    harvest: "Harvest", recruit: "Recruit", empower: "Empower", "": "None",
+    harvest: "Harvest", recruit: "View", empower: "Empower", "": "None",
 };
 
 export const WITA_ORDERS = ["", "craft", "trade", "research", "harvest", "recruit", "empower"];
@@ -218,13 +218,59 @@ export async function createCustomFacility(opts) {
         flags: { wita: { [WITA_CUSTOM_FACILITY_FLAG]: flagData } },
     };
 
-    const item = (await Item.createDocuments([itemData]))[0];
+    // Store in wita.wita-items compendium under Bastion/Custom folder
+    const pack = game.packs.get("wita.wita-items");
+    let folderId = null;
+    let wasLocked = false;
+
+    if (pack) {
+        // Unlock compendium if locked
+        wasLocked = pack.locked;
+        if (wasLocked) await pack.configure({ locked: false });
+
+        try {
+            // Find or create Bastion folder
+            let bastionFolder = pack.folders.find(f => f.name === "Bastion" && !f.folder);
+            if (!bastionFolder) {
+                bastionFolder = (await Folder.createDocuments(
+                    [{ name: "Bastion", type: "Item", color: "#4a3728" }],
+                    { pack: "wita.wita-items" }
+                ))[0];
+            }
+            // Find or create Custom subfolder inside Bastion
+            let customFolder = pack.folders.find(f => f.name === "Custom" && f.folder?.id === bastionFolder?.id);
+            if (!customFolder && bastionFolder) {
+                customFolder = (await Folder.createDocuments(
+                    [{ name: "Custom", type: "Item", folder: bastionFolder.id, color: "#6b4c3b" }],
+                    { pack: "wita.wita-items" }
+                ))[0];
+            }
+            folderId = customFolder?.id ?? bastionFolder?.id ?? null;
+        } finally {
+            // Re-lock compendium if it was locked before
+            if (wasLocked) await pack.configure({ locked: true });
+        }
+    }
+
+    // Unlock again for item creation, then re-lock
+    if (pack && wasLocked) await pack.configure({ locked: false });
+
+    const createOptions = pack ? { pack: "wita.wita-items" } : {};
+    if (folderId) itemData.folder = folderId;
+
+    let item;
+    try {
+        item = (await Item.createDocuments([itemData], createOptions))[0];
+    } finally {
+        if (pack && wasLocked) await pack.configure({ locked: true });
+    }
+
     if (!item) {
         ui.notifications.error("WITA | Failed to create custom facility item.");
         return null;
     }
 
-    console.log(`WITA | Custom facility "${item.name}" created (${item.id})`);
+    console.log(`WITA | Custom facility "${item.name}" created (${item.id}) in wita.wita-items`);
     return item;
 }
 
@@ -234,7 +280,13 @@ export async function createCustomFacility(opts) {
 export async function deleteCustomFacility(itemId) {
     if (!game.user.isGM) return;
 
-    const item = game.items.get(itemId);
+    // Handle both world items and compendium items
+    let item = game.items.get(itemId);
+    if (!item) {
+        // Try compendium
+        const pack = game.packs.get("wita.wita-items");
+        if (pack) item = await pack.getDocument(itemId).catch(() => null);
+    }
     if (!item) return;
 
     // Clear any slots using this facility.
@@ -250,21 +302,28 @@ export async function deleteCustomFacility(itemId) {
     }
     if (changed) await saveBastionData(data);
 
-    // Remove from Engineer vendor.
+    // Remove from Engineer stock list and cost record.
     const engData = getEngineeringData();
-    const vendor  = engData.vendorActorId ? game.actors.get(engData.vendorActorId) : null;
+    engData.stockedFacilities = (engData.stockedFacilities ?? []).filter(id => id !== itemId);
+    if (engData.facilities?.[itemId]) delete engData.facilities[itemId];
+    await saveEngineeringData(engData);
+
+    // Remove from Engineer vendor.
+    const vendor = engData.vendorActorId ? game.actors.get(engData.vendorActorId) : null;
     if (vendor) {
         const vi = vendor.items.find(i => i.flags?.wita?.engineerItemId === itemId);
         if (vi) await vi.delete();
     }
 
-    // Remove cost record.
-    if (engData.facilities?.[itemId]) {
-        delete engData.facilities[itemId];
-        await saveEngineeringData(engData);
+    // Unlock compendium if needed for deletion
+    const delPack = item.pack ? game.packs.get(item.pack) : null;
+    const delLocked = delPack?.locked ?? false;
+    if (delLocked) await delPack.configure({ locked: false });
+    try {
+        await item.delete();
+    } finally {
+        if (delLocked) await delPack.configure({ locked: true });
     }
-
-    await item.delete();
     console.log(`WITA | Custom facility "${item.name}" deleted.`);
 }
 

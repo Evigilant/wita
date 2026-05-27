@@ -25,21 +25,11 @@ export function registerGuildhall() {
 // ── Bastion turn detection ────────────────────────────────────
 
 function _registerTurnHook() {
-    let _lastTurn = null;
-
-    Hooks.on("updateSetting", async (setting) => {
+    // Primary resolution is called directly from runBastionTurn via game.wita.guildhall.resolveNow()
+    // This hook refreshes the quest board UI when bastionState changes
+    Hooks.on("updateSetting", (setting) => {
         if (setting.namespace !== "wita") return;
         if (setting.key !== "bastionState") return;
-        if (!game.user.isGM) return;
-
-        const newTurn = (witaSetting("bastionState")?.turnNumber ?? 0);
-        if (_lastTurn === null) { _lastTurn = newTurn; return; }
-        if (newTurn <= _lastTurn) { _lastTurn = newTurn; return; }
-
-        _lastTurn = newTurn;
-        await resolveActiveQuests(newTurn);
-
-        // Refresh quest board if open
         const board = foundry.applications.instances.get("wita-guildhall-board");
         if (board?.rendered) board.render({ force: true });
     });

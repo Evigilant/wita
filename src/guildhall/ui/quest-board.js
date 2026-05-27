@@ -23,7 +23,7 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
 
     static open() {
         const existing = foundry.applications.instances.get(BOARD_ID);
-        if (existing?.rendered) { existing.bringToTop(); return existing; }
+        if (existing?.rendered) { existing.bringToFront(); return existing; }
         return new WITAQuestBoard().render({ force: true });
     }
 
@@ -245,7 +245,7 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
                 // Wait a tick for DOM to be ready
                 await new Promise(r => setTimeout(r, 100));
             } else {
-                panel.bringToTop();
+                panel.bringToFront();
             }
             // Switch to facilities tab using window-content as container
             const wc = panel.element?.querySelector(".window-content");
@@ -292,7 +292,7 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
     static open(questId, board) {
         const appId  = `wita-quest-detail-${questId}`;
         const existing = foundry.applications.instances.get(appId);
-        if (existing?.rendered) { existing.bringToTop(); return; }
+        if (existing?.rendered) { existing.bringToFront(); return; }
         new WITAQuestDetail(questId, board, { id: appId }).render({ force: true });
     }
 
@@ -518,8 +518,19 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
         el.querySelector(".wita-qd-source-link")?.addEventListener("click", async (e) => {
             const sourceId = e.target.dataset.sourceId;
             if (!sourceId) return;
-            const journalId = sourceId.includes("::") ? sourceId.split("::")[0] : sourceId;
-            game.journal.get(journalId)?.sheet.render({ force: true });
+            // CC quests: "journalId::questId" — open the parent journal
+            // FQL quests: full UUID like "JournalEntry.xxxxx" — extract short ID
+            const rawId = sourceId.includes("::") ? sourceId.split("::")[0] : sourceId;
+            // Strip UUID prefix if present (e.g. "JournalEntry.abc123" → "abc123")
+            const shortId = rawId.includes(".") ? rawId.split(".").pop() : rawId;
+            const journal = game.journal.get(shortId);
+            if (journal) {
+                journal.sheet.render({ force: true });
+            } else {
+                // Try fromUuid as fallback
+                const doc = await fromUuid(rawId).catch(() => null);
+                doc?.sheet?.render({ force: true });
+            }
         });
 
         // Delete
@@ -554,7 +565,7 @@ export class WITAQuestCreate extends foundry.applications.api.ApplicationV2 {
 
     static open(board) {
         const existing = foundry.applications.instances.get("wita-quest-create");
-        if (existing?.rendered) { existing.bringToTop(); return; }
+        if (existing?.rendered) { existing.bringToFront(); return; }
         new WITAQuestCreate(board).render({ force: true });
     }
 

@@ -109,6 +109,9 @@ export async function runBastionTurn(turnNumber) {
             sendBastionActionMessage(turnNumber, event, financial);
         }
 
+        // Resolve active guildhall quests
+        await game.wita?.guildhall?.resolveNow?.();
+
         ui.notifications.info(`WITA | Bastion Turn #${turnNumber} complete. Check GM chat for instructions.`);
         console.log(`WITA | Bastion turn #${turnNumber} done. Report dated: ${date}`);
 

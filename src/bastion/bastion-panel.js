@@ -672,7 +672,7 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
     async _openFacilityDetail(slot, allWorkers, restState) {
         const appId = `wita-facility-detail-${slot.id}`;
         const existing = foundry.applications.instances.get(appId);
-        if (existing) { existing.bringToTop(); return; }
+        if (existing) { existing.bringToFront(); return; }
         const detail = new WITAFacilityDetail(slot, allWorkers, restState, this, { id: appId });
         detail.render({ force: true });
     }
@@ -1075,21 +1075,24 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
             el.appendChild(this._buildCostTable(metaRows, false, false, true));
         }
 
-        // DMG Facilities — drag-drop to add
-        const dmgLabel = document.createElement("div");
-        dmgLabel.className = "wita-section-label";
-        dmgLabel.style.display = "flex";
-        dmgLabel.style.alignItems = "center";
-        dmgLabel.innerHTML = `<span style="flex:1">DMG Facilities</span>
-            ${isGM ? `<button class="wita-btn" id="wita-clear-facilities" style="font-size:0.65rem;padding:0.15rem 0.5rem"><i class="fas fa-trash"></i> Clear All</button>` : ""}`;
-        el.appendChild(dmgLabel);
+        // Facilities — drag-drop to add (DMG compendium, wita.wita-items, or world items)
+        const facLabel = document.createElement("div");
+        facLabel.className = "wita-section-label";
+        facLabel.style.display = "flex";
+        facLabel.style.alignItems = "center";
+        facLabel.innerHTML = `<span style="flex:1">Facilities</span>
+            ${isGM ? `
+                <button class="wita-btn" id="wita-new-facility" style="font-size:0.65rem;padding:0.15rem 0.5rem;margin-right:0.25rem"><i class="fas fa-plus"></i> New</button>
+                <button class="wita-btn" id="wita-clear-facilities" style="font-size:0.65rem;padding:0.15rem 0.5rem"><i class="fas fa-trash"></i> Clear All</button>
+            ` : ""}`;
+        el.appendChild(facLabel);
 
         // Drop zone
         if (isGM) {
             const dropZone = document.createElement("div");
             dropZone.id = "wita-facility-dropzone";
             dropZone.className = "wita-facility-dropzone";
-            dropZone.innerHTML = `<i class="fas fa-arrow-down"></i> Drag a facility from the compendium to add it`;
+            dropZone.innerHTML = `<i class="fas fa-arrow-down"></i> Drag a facility from any compendium or world items`;
             dropZone.addEventListener("dragover", e => {
                 e.preventDefault();
                 dropZone.classList.add("drag-over");
@@ -1105,7 +1108,6 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
                     console.warn("WITA | Could not parse drop data:", raw);
                     return;
                 }
-                console.log("WITA | Drop data:", dd);
                 if (!dd.uuid && dd.id) {
                     dd.uuid = dd.pack ? `Compendium.${dd.pack}.Item.${dd.id}` : `Item.${dd.id}`;
                 }
@@ -1120,38 +1122,26 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
             el.appendChild(dropZone);
         }
 
-        // Stocked facilities table
-        const engData2   = getEngineeringData();
-        const stocked    = engData2.stockedFacilities ?? [];
+        // Unified stocked facilities table (DMG + custom + any world items)
+        const engData2 = getEngineeringData();
+        const stocked  = engData2.stockedFacilities ?? [];
         if (stocked.length === 0) {
-            { const _d = document.createElement("div"); _d.innerHTML = `<div class="wita-empty" style="padding:0.4rem 0">No facilities added yet. Drag from the compendium above.</div>`; el.appendChild(_d); }
+            const _d = document.createElement("div");
+            _d.innerHTML = `<div class="wita-empty" style="padding:0.4rem 0">No facilities added yet. Drag from a compendium or click New to create a custom facility.</div>`;
+            el.appendChild(_d);
         } else {
             const allFac2 = getAllFacilities();
-            const dmgRows = stocked
+            const facRows = stocked
                 .map(itemId => {
-                    const meta = allFac2[itemId] ?? WITA_DMG_FACILITIES[itemId] ?? { name: itemId };
-                    return { id: itemId, name: meta.name, meta: false, cost: getFacilityCost(itemId), fMeta: meta, removable: true };
+                    const meta = allFac2[itemId] ?? WITA_DMG_FACILITIES[itemId] ?? {};
+                    // Fallback: use stored name from cost record (covers compendium items not in game.items)
+                    const storedName = engData2.facilities?.[itemId]?.name;
+                    const name = meta.name ?? storedName ?? itemId;
+                    const isCustom = !!meta.custom || (!!storedName && !WITA_DMG_FACILITIES[itemId]);
+                    return { id: itemId, name, meta: false, cost: getFacilityCost(itemId), fMeta: { ...meta, name }, removable: true, custom: isCustom };
                 })
                 .sort((a, b) => a.name.localeCompare(b.name));
-            el.appendChild(this._buildCostTable(dmgRows, true, false, true));
-        }
-
-        const allFac    = getAllFacilities();
-        const customFac = Object.entries(allFac).filter(([, m]) => m.custom);
-        const customLabel = document.createElement("div");
-        customLabel.className = "wita-section-label";
-        customLabel.style.display = "flex";
-        customLabel.style.alignItems = "center";
-        customLabel.innerHTML = `<span style="flex:1">Custom Facilities</span>
-            ${isGM ? `<button class="wita-btn" id="wita-new-facility" style="font-size:0.65rem;padding:0.15rem 0.5rem"><i class="fas fa-plus"></i> New</button>` : ""}`;
-        el.appendChild(customLabel);
-
-        if (customFac.length === 0) {
-            { const _d = document.createElement("div"); _d.innerHTML = `<div class="wita-empty" style="padding:0.4rem 0">No custom facilities yet.</div>`; el.appendChild(_d); }
-        } else {
-            const customRows = customFac.sort((a, b) => a[1].name.localeCompare(b[1].name))
-                .map(([id, meta]) => ({ id, name: meta.name, meta: false, cost: getFacilityCost(id), fMeta: meta, custom: true }));
-            el.appendChild(this._buildCostTable(customRows, true, true));
+            el.appendChild(this._buildCostTable(facRows, true, true, true));
         }
 
         return el;
@@ -1675,7 +1665,7 @@ export function registerBastionPanel() {
     // Compatible with v13 and v14 — injects directly into DOM after render
     const _witaOpenPanel = () => {
         const existing = foundry.applications.instances.get(PANEL_ID);
-        if (existing?.rendered) { existing.bringToTop(); return; }
+        if (existing?.rendered) { existing.bringToFront(); return; }
         new WITABastionPanel().render({ force: true });
     };
 
@@ -1798,7 +1788,7 @@ export function registerBastionPanel() {
 function _witaOpenPlayerPanel(seneschalActor = null) {
     const existing = foundry.applications.instances.get(PANEL_ID);
     if (existing?.rendered) {
-        existing.bringToTop();
+        existing.bringToFront();
         return;
     }
     const panel = new WITABastionPanel();

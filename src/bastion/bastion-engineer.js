@@ -64,11 +64,12 @@ export async function _addFacilityToStock(uuid) {
     stocked.push(itemId);
     engData.stockedFacilities = stocked;
 
-    // Seed default cost if none exists
-    if (!engData.facilities?.[itemId]) {
-        engData.facilities        = engData.facilities ?? {};
+    // Seed default cost if none exists, always store name for sync display
+    engData.facilities = engData.facilities ?? {};
+    if (!engData.facilities[itemId]) {
         engData.facilities[itemId] = { gpOnly: 1000, gpWithMaterials: 400, materials: [] };
     }
+    engData.facilities[itemId].name = item.name;
 
     await saveEngineeringData(engData);
 
@@ -80,6 +81,7 @@ export async function _addFacilityToStock(uuid) {
         if (!already) {
             await vendor.createEmbeddedDocuments("Item", [_facilityVendorItem(item)]);
         }
+        // Item Piles re-renders automatically on actor item changes
     }
 
     ui.notifications.info(`WITA | "${item.name}" added to Engineer stock.`);
@@ -94,6 +96,14 @@ export async function _removeFacilityFromStock(itemId) {
     engData.stockedFacilities = (engData.stockedFacilities ?? []).filter(id => id !== itemId);
     delete engData.facilities?.[itemId];
     await saveEngineeringData(engData);
+
+    // Remove from vendor actor
+    const vendor = engData.vendorActorId ? game.actors.get(engData.vendorActorId) : null;
+    if (vendor) {
+        const vendorItem = vendor.items.find(i => i.flags?.wita?.engineerItemId === itemId);
+        if (vendorItem) await vendor.deleteEmbeddedDocuments("Item", [vendorItem.id]);
+        // Item Piles re-renders automatically on actor item changes
+    }
 }
 
 // Meta-items (tier upgrades, slot expansions, enlargements, size licenses)
@@ -160,45 +170,10 @@ export async function createEngineerVendor() {
         }
     });
 
-    // Build all vendor items.
+    // Only add items that have been explicitly configured in the Engineer tab.
+    // Meta items (tier upgrades, slot expansions etc.) are added via the Engineer tab stock list.
+    // Facilities are added via drag-drop. Nothing is bulk-seeded on creation.
     const itemsToCreate = [];
-
-    // Category A: Tier upgrades
-    for (const [tier, label] of [[1, "Tier I — Cramped"], [2, "Tier II — Roomy"], [3, "Tier III — Vast"]]) {
-        const key  = `tierUpgrade${tier}`;
-        const cost = getMetaCost(key);
-        itemsToCreate.push(_metaVendorItem(`Bastion Expansion — ${label}`, cost.gpOnly, key, "tierUpgrade", {
-            tier,
-            description: `Unlocks ${WITA_SIZE_LABEL[WITA_TIER_SIZES[tier].at(-1)]} facilities for the bastion.`,
-        }));
-    }
-
-    // Category B: Slot expansions
-    for (const [label, key, fType] of [
-        ["Add Basic Facility Slot",   "basicSlot",   "basic"],
-        ["Add Special Facility Slot", "specialSlot", "special"],
-    ]) {
-        const cost = getMetaCost(key);
-        itemsToCreate.push(_metaVendorItem(label, cost.gpOnly, key, "slotExpansion", { facilityType: fType }));
-    }
-
-    // Category C: Enlargement
-    {
-        const cost = getMetaCost("enlarge");
-        itemsToCreate.push(_metaVendorItem("Enlarge Facility", cost.gpOnly, "enlarge", "enlargement", {}));
-    }
-
-    // Category D: Size licenses
-    {
-        const roomyCost = getMetaCost("roomyLicense");
-        itemsToCreate.push(_metaVendorItem("Roomy Slot License", roomyCost.gpOnly, "roomyLicense", "sizeLicense", { sizeType: "roomy" }));
-        const vastCost = getMetaCost("vastLicense");
-        itemsToCreate.push(_metaVendorItem("Vast Slot License", vastCost.gpOnly, "vastLicense", "sizeLicense", { sizeType: "vast" }));
-    }
-
-    // Category E: Facilities are added via drag-drop in the Engineer tab, not bulk-created here.
-
-    await actor.createEmbeddedDocuments("Item", itemsToCreate);
 
     engData.vendorActorId = actor.id;
     await saveEngineeringData(engData);
@@ -336,10 +311,12 @@ export async function syncVendorPrices() {
 
         const worldItem = game.items.get(itemId);
         if (worldItem) { toCreate.push(_facilityVendorItem(worldItem)); continue; }
-        const pack = game.packs.get(DMG_PACK);
-        if (pack) {
-            const doc = await pack.getDocument(itemId);
-            if (doc) toCreate.push(_facilityVendorItem(doc));
+        // Try wita.wita-items compendium first (custom facilities), then DMG pack
+        for (const packId of ["wita.wita-items", DMG_PACK]) {
+            const pack = game.packs.get(packId);
+            if (!pack) continue;
+            const doc = await pack.getDocument(itemId).catch(() => null);
+            if (doc) { toCreate.push(_facilityVendorItem(doc)); break; }
         }
     }
 
@@ -352,8 +329,26 @@ export async function syncVendorPrices() {
         toCreate.push(_metaVendorItem(name, cost.gpOnly, metaKey, _metaCategoryFromKey(metaKey), {}));
     }
 
+    // ── 4. Remove vendor items no longer in stock lists ──
+    const stockedFacilityIds = new Set(stockedFacilities);
+    const stockedMetaKeys    = new Set(stockedMeta.map(m => m.metaKey));
+    const toDelete = [];
+    for (const item of vendorItems) {
+        const wf = item.flags?.wita;
+        if (!wf) continue;
+        if (wf.engineerCategory === "facility" && !stockedFacilityIds.has(wf.engineerItemId)) {
+            toDelete.push(item.id);
+        } else if (wf.engineerMetaKey && !stockedMetaKeys.has(wf.engineerMetaKey)) {
+            toDelete.push(item.id);
+        }
+    }
+
     if (updates.length)  await vendor.updateEmbeddedDocuments("Item", updates);
     if (toCreate.length) await vendor.createEmbeddedDocuments("Item", toCreate);
+    if (toDelete.length) await vendor.deleteEmbeddedDocuments("Item", toDelete);
+
+    // Refresh Item Piles merchant inventory cache
+    // Item Piles re-renders automatically on actor item changes
 
     const total = updates.length + toCreate.length;
     ui.notifications.info(`WITA | Vendor synced — ${updates.length} updated, ${toCreate.length} added.`);
@@ -643,8 +638,15 @@ async function _openSlotDialog(facilityItemId, item, meta) {
 export async function openCustomFacilityDialog(existingItemId = null) {
     if (!game.user.isGM) return;
 
-    const existing = existingItemId ? game.items.get(existingItemId) : null;
-    const ef       = existing?.getFlag("wita", "customFacility") ?? {};
+    let existing = existingItemId ? game.items.get(existingItemId) : null;
+    // Also check compendium if not found in world items
+    if (existingItemId && !existing) {
+        const pack = game.packs.get("wita.wita-items");
+        if (pack) existing = await pack.getDocument(existingItemId).catch(() => null);
+    }
+    const ef      = existing?.getFlag?.("wita", "customFacility") ?? {};
+    const engData = getEngineeringData();
+    const ec      = engData.facilities?.[existingItemId] ?? { gpOnly: 1000, gpWithMaterials: 400, materials: [] };
 
     const sizeOptions = WITA_SIZES.map(s =>
         `<option value="${s}" ${(ef.size ?? "cramped") === s ? "selected" : ""}>${WITA_SIZE_LABEL[s]}</option>`
@@ -728,6 +730,26 @@ export async function openCustomFacilityDialog(existingItemId = null) {
                 Description <textarea name="description" rows="3" placeholder="Flavour text and mechanical effects…"
                              style="font-size:0.75rem;padding:0.2rem 0.35rem;border:1px solid var(--color-fieldset-border);border-radius:3px;resize:vertical">${sanitizeHTML(ef.description ?? "")}</textarea>
             </label>
+
+            <div style="border-top:1px solid var(--color-fieldset-border);margin-top:0.25rem;padding-top:0.4rem">
+                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-form-hint);margin-bottom:0.35rem">Construction Costs</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem">
+                    <label style="display:flex;flex-direction:column;gap:0.1rem;font-size:0.75rem;font-weight:600">
+                        GP Only <input type="number" name="gpOnly" value="${ec.gpOnly ?? 1000}" min="0"
+                                 style="font-size:0.78rem;padding:0.15rem 0.3rem;border:1px solid var(--color-fieldset-border);border-radius:3px">
+                    </label>
+                    <label style="display:flex;flex-direction:column;gap:0.1rem;font-size:0.75rem;font-weight:600">
+                        GP with Materials <input type="number" name="gpWithMaterials" value="${ec.gpWithMaterials ?? 400}" min="0"
+                                          style="font-size:0.78rem;padding:0.15rem 0.3rem;border:1px solid var(--color-fieldset-border);border-radius:3px">
+                    </label>
+                </div>
+                <label style="display:flex;flex-direction:column;gap:0.1rem;font-size:0.75rem;font-weight:600;margin-top:0.35rem">
+                    Materials <input type="text" name="materialsLabel" value="${sanitizeHTML((ec.materials ?? []).map(m => m.qty + '×' + m.name).join(', '))}"
+                               placeholder="e.g. 50× Stone, 20× Timber"
+                               style="font-size:0.78rem;padding:0.15rem 0.3rem;border:1px solid var(--color-fieldset-border);border-radius:3px">
+                    <span style="font-size:0.65rem;color:var(--color-form-hint)">Format: qty× Name, qty× Name</span>
+                </label>
+            </div>
         </div>
     `;
 
@@ -740,6 +762,13 @@ export async function openCustomFacilityDialog(existingItemId = null) {
                 label: existingItemId ? "Save Changes" : "Create",
                 callback: async html => {
                     const f = html instanceof jQuery ? html[0] : html;
+                    // Parse materials from "qty× Name, qty× Name" format
+                    const matStr = f.querySelector("[name=materialsLabel]")?.value.trim() ?? "";
+                    const materials = matStr ? matStr.split(",").map(s => {
+                        const m = s.trim().match(/^(\d+)[\u00d7x]\s*(.+)$/);
+                        return m ? { qty: parseInt(m[1]), name: m[2].trim() } : null;
+                    }).filter(Boolean) : [];
+
                     const opts = {
                         name:             f.querySelector("[name=name]").value.trim(),
                         subtype:          f.querySelector("[name=subtype]").value.trim(),
@@ -755,12 +784,15 @@ export async function openCustomFacilityDialog(existingItemId = null) {
                         enlargeDefenders: parseInt(f.querySelector("[name=enlargeDefenders]").value) || 0,
                         description:      f.querySelector("[name=description]").value.trim(),
                         img:              existing?.img ?? "icons/svg/castle.svg",
+                        gpOnly:           parseInt(f.querySelector("[name=gpOnly]").value) || 1000,
+                        gpWithMaterials:  parseInt(f.querySelector("[name=gpWithMaterials]").value) || 400,
+                        materials,
                     };
 
                     if (!opts.name) { ui.notifications.warn("WITA | Name is required."); return; }
 
                     if (existingItemId) {
-                        // Update existing item.
+                        // Update existing item flags
                         const flagData = { ...opts };
                         await existing.update({
                             name:   opts.name,
@@ -776,11 +808,33 @@ export async function openCustomFacilityDialog(existingItemId = null) {
                             },
                             flags: { wita: { customFacility: flagData } },
                         });
+                        // Update cost record
+                        const ed = getEngineeringData();
+                        ed.facilities = ed.facilities ?? {};
+                        ed.facilities[existingItemId] = {
+                            ...(ed.facilities[existingItemId] ?? {}),
+                            name:            opts.name,
+                            gpOnly:          opts.gpOnly,
+                            gpWithMaterials: opts.gpWithMaterials,
+                            materials:       opts.materials,
+                        };
+                        await saveEngineeringData(ed);
                         await syncVendorPrices();
                         ui.notifications.info(`WITA | "${opts.name}" updated.`);
                     } else {
                         const newItem = await createCustomFacility(opts);
-                        if (newItem) await addCustomFacilityToVendor(newItem);
+                        if (newItem) {
+                            await _addFacilityToStock(newItem.uuid);
+                            // Override default cost with user-specified values
+                            const ed = getEngineeringData();
+                            const nid = newItem.id;
+                            if (ed.facilities?.[nid]) {
+                                ed.facilities[nid].gpOnly          = opts.gpOnly;
+                                ed.facilities[nid].gpWithMaterials = opts.gpWithMaterials;
+                                ed.facilities[nid].materials       = opts.materials;
+                                await saveEngineeringData(ed);
+                            }
+                        }
                     }
 
                     _refreshPanel();
