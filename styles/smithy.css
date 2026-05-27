@@ -1,0 +1,222 @@
+/* ============================================================
+   WITA Smithy — smithy.css
+   ============================================================ */
+
+.wita-smithy-dialog .window-content { padding: 0; overflow: visible; }
+
+.wita-smithy-body {
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-family: var(--font-primary, "Signika");
+    color: var(--color-form-label);
+    font-size: 0.78rem;
+}
+
+/* ── Current commission ──────────────────────────────────── */
+.wita-smithy-current-order {
+    background: var(--color-cool-5);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 4px;
+    padding: 0.4rem 0.5rem;
+}
+.wita-smithy-order-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+.wita-smithy-order-info {
+    flex: 1;
+    min-width: 0;
+}
+.wita-smithy-order-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-highlights);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wita-smithy-order-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: 0.65rem;
+    color: var(--color-form-hint);
+    margin-top: 0.15rem;
+}
+.wita-smithy-divider {
+    border-top: 1px solid var(--color-fieldset-border);
+    margin: 0.1rem 0;
+}
+
+/* ── Workers ─────────────────────────────────────────────── */
+.wita-smithy-workers {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    padding: 0.3rem 0.4rem;
+    background: var(--color-cool-5);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    border: 1px solid var(--color-fieldset-border);
+}
+.wita-smithy-worker {
+    background: var(--color-highlights-15);
+    color: var(--color-highlights);
+    border-radius: 3px;
+    padding: 0.05rem 0.35rem;
+    font-size: 0.68rem;
+}
+.wita-smithy-morale {
+    margin-left: auto;
+    font-size: 0.68rem;
+    color: var(--color-form-hint);
+}
+
+/* ── Section label ───────────────────────────────────────── */
+.wita-smithy-section-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-form-hint);
+    border-bottom: 1px solid var(--color-fieldset-border);
+    padding-bottom: 0.15rem;
+}
+
+/* ── Form ────────────────────────────────────────────────── */
+.wita-smithy-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+/* Two-column row: narrow label left, control right */
+.wita-smithy-inline-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    align-items: center;
+    gap: 0.4rem;
+}
+/* Override for rows that should stack (base select, cost summary) */
+.wita-smithy-inline-row.full {
+    grid-template-columns: 1fr;
+}
+/* Override for qty row which has multiple controls */
+.wita-smithy-inline-row.multi {
+    grid-template-columns: 80px 52px auto auto;
+    align-items: center;
+}
+.wita-smithy-form-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--color-form-hint);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: right;
+}
+.wita-smithy-inline-row select,
+.wita-smithy-inline-row input[type="number"] {
+    width: 100%;
+    background: var(--color-cool-5);
+    color: var(--color-form-label);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+}
+.wita-smithy-inline-row select:focus,
+.wita-smithy-inline-row input:focus {
+    border-color: var(--color-highlights);
+    outline: none;
+}
+.wita-smithy-inline-row select:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+/* Remove the inline-field wrapper styling */
+.wita-smithy-inline-field { display: contents; }
+
+/* ── DC preview ──────────────────────────────────────────── */
+.wita-smithy-dc-preview {
+    font-size: 0.75rem;
+    color: var(--color-form-hint);
+    white-space: nowrap;
+}
+
+/* ── Rarity badge ────────────────────────────────────────── */
+.wita-smithy-rarity-badge {
+    font-size: 0.6rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    background: var(--color-fieldset-border);
+    color: var(--color-form-hint);
+}
+.wita-smithy-dc {
+    font-size: 0.65rem;
+    color: var(--color-form-hint);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+.wita-smithy-footer {
+    display: flex;
+    gap: 0.35rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--color-fieldset-border);
+}
+
+/* ── Facility detail commission status ───────────────────── */
+.wita-smithy-commission {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    background: var(--color-cool-5);
+    border-radius: 4px;
+    font-size: 0.73rem;
+    flex-wrap: wrap;
+}
+.wita-smithy-turns-left {
+    font-size: 0.68rem;
+    color: var(--color-form-hint);
+}
+
+/* ── Cost summary ────────────────────────────────────────── */
+.wita-smithy-cost-summary {
+    background: var(--color-cool-5);
+    border: 1px solid var(--color-fieldset-border);
+    border-radius: 3px;
+    padding: 0.35rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.wita-smithy-cost-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+}
+.wita-smithy-cost-label {
+    color: var(--color-form-hint);
+    font-size: 0.68rem;
+}
+.wita-smithy-cost-value {
+    font-weight: 600;
+    color: var(--color-form-label);
+}
+.wita-smithy-cost-ok   { color: var(--color-level-success); }
+.wita-smithy-cost-warn { color: var(--color-level-error); }
+.wita-smithy-cost-warning {
+    font-size: 0.65rem;
+    color: var(--color-level-error);
+    margin-top: 0.1rem;
+}

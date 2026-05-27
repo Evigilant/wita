@@ -259,6 +259,8 @@
 .wita-finance-table td { padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--color-fieldset-border); }
 .wita-finance-table tr:last-child td { border-bottom: none; }
 .wita-finance-total { font-size: 0.72rem; font-weight: 700; color: var(--color-highlights); text-align: right; margin-top: 0.2rem; }
+.wita-balance-callout { display: flex; align-items: center; gap: 0.25rem; font-weight:700; padding: 0.3rem 0; }
+.wita-balance-value { font-weight: 600; color: var(--color-highlights); }
 
 /* ── Reports ──────────────────────────────────────────────── */
 .wita-report-list { display: flex; flex-direction: column; gap: 0.3rem; }

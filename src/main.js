@@ -1,7 +1,5 @@
 // ============================================================
-// WITA — MAIN ENTRY POINT (v1.1.0)
-// Single ES module imported by module.json "esmodules".
-// All imports register their own Hooks as side effects.
+// WITA — MAIN ENTRY POINT (v0.4.0)
 // ============================================================
 
 // ── Core ───────────────────────────────────────────────────────
@@ -28,6 +26,7 @@ import { handleEngineerPurchase,
          openCustomFacilityDialog }     from "./bastion/bastion-engineer.js";
 
 import { registerGuildhall } from "./guildhall/guildhall-main.js";
+import { registerSmithy }   from "./smithy/smithy-main.js";
 import { rollRandomEncounters, registerEncounterChatHook } from "./encounters/encounters.js";
 
 
@@ -50,6 +49,7 @@ Hooks.once("ready", () => {
     game.wita.bastion.handleEngineerPurchase   = handleEngineerPurchase;
     game.wita.bastion.openCustomFacilityDialog = openCustomFacilityDialog;
     registerGuildhall(); // must run after game.wita is assigned
+    registerSmithy();
     registerEncounterChatHook();
     // Expose encounter roller on game.wita
     game.wita.rollEncounters = rollRandomEncounters;

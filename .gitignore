@@ -18,6 +18,7 @@ Thumbs.db
 # Environment / secrets
 *.env
 .env*
+wita.conf
 
 # Foundry data (never commit world data)
 *.db

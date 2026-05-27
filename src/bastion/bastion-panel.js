@@ -219,6 +219,25 @@ class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
                 }
                 ${game.user.isGM ? `<button class="wita-detail-micro-btn wita-fd-add-hireling" style="margin-top:0.3rem"><i class="fas fa-plus"></i> Add Hireling</button>` : ""}
             </div>
+            ${(() => {
+                // Smithy commission status
+                const smithyOrder = slot.flags?.wita?.smithyOrder;
+                if (!smithyOrder) return "";
+                const turnNow    = this._restState?.bst?.turnNumber ?? 0;
+                const turnsLeft  = Math.max(0, smithyOrder.turnsRequired - (turnNow - smithyOrder.turnStarted));
+                const rLabel     = { common:"Common", uncommon:"Uncommon", rare:"Rare", veryrare:"Very Rare" }[smithyOrder.rarity] ?? smithyOrder.rarity;
+                return `
+                    <div class="wita-fd-section-label" style="margin-top:0.5rem">Active Commission</div>
+                    <div class="wita-smithy-commission">
+                        <i class="fas fa-hammer"></i>
+                        <span><strong>${smithyOrder.quantity}×</strong> ${sanitizeHTML(smithyOrder.itemName)}</span>
+                        <span class="wita-smithy-rarity-badge">${rLabel}</span>
+                        <span class="wita-smithy-turns-left">
+                            <i class="fas fa-hourglass-half"></i> ${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""} left
+                        </span>
+                        <span class="wita-smithy-dc">DC ${smithyOrder.dc}</span>
+                    </div>`;
+            })()}
         `;
         return inner;
     }
@@ -649,6 +668,13 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
                         ${sIcon ? `<span>${sIcon} ${WITA_SIZE_LABEL[slot.facilitySize]}</span>` : ""}
                         ${oLabel ? `<span>${oIcon} ${oLabel}</span>` : ""}
                         ${timeLabel}
+                        ${(() => {
+                            const so = slot.flags?.wita?.smithyOrder;
+                            if (!so) return "";
+                            const turnNow   = restState?.bst?.turnNumber ?? 0;
+                            const turnsLeft = Math.max(0, so.turnsRequired - (turnNow - so.turnStarted));
+                            return `<span style="color:var(--color-highlights);font-size:0.6rem"><i class="fas fa-hammer"></i> ${sanitizeHTML(so.itemName)} (${turnsLeft}t)</span>`;
+                        })()}
                     </div>
                 </div>
                 <div class="wita-slot-actions">

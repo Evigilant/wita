@@ -70,3 +70,37 @@ export function getFinancialSummary() {
         return null;
     }
 }
+
+/**
+ * Attempt to deduct GP from the banker's bank account.
+ * Returns { success, balance, shortfall } where success=false means insufficient funds (deduction still performed if allowPartial).
+ */
+export async function deductBankFunds(amount, allowShortfall = true) {
+    try {
+        if (!game.modules.get("financial-system")?.active) return { success: false, balance: 0, shortfall: amount };
+
+        const bankerActorId = witaSetting("bankerActorId");
+        const economyId     = witaSetting("economyId");
+        const accounts      = game.settings.get("financial-system", "bankAccounts") ?? {};
+        const accountKey    = Object.keys(accounts).find(k =>
+            accounts[k].actorId === bankerActorId && accounts[k].economyId === economyId
+        );
+        if (!accountKey) return { success: false, balance: 0, shortfall: amount };
+
+        const account   = accounts[accountKey];
+        const balance   = account.balance ?? 0;
+        const shortfall = Math.max(0, amount - balance);
+        const deduct    = allowShortfall ? amount : Math.min(amount, balance);
+
+        if (deduct > 0) {
+            account.balance = Math.max(0, balance - deduct);
+            accounts[accountKey] = account;
+            await game.settings.set("financial-system", "bankAccounts", accounts);
+        }
+
+        return { success: shortfall === 0, balance: account.balance, shortfall };
+    } catch (e) {
+        console.warn("WITA | Could not deduct bank funds:", e);
+        return { success: false, balance: 0, shortfall: amount };
+    }
+}
