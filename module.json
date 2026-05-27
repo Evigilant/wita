@@ -18,7 +18,8 @@
     "styles": [
         "styles/potion-brewing.css",
         "styles/bastion-panel.css",
-        "styles/guildhall.css"
+        "styles/guildhall.css",
+        "styles/smithy.css"
     ],
     "esmodules": ["src/main.js"],
     "scripts": [],

@@ -104,10 +104,12 @@
 }
 /* Override for rows that should stack (base select, cost summary) */
 .wita-smithy-inline-row.full {
+    display: grid;
     grid-template-columns: 1fr;
 }
 /* Override for qty row which has multiple controls */
 .wita-smithy-inline-row.multi {
+    display: grid;
     grid-template-columns: 80px 52px auto auto;
     align-items: center;
 }
