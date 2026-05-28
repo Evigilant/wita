@@ -4,7 +4,7 @@
 // ============================================================
 
 import { getQuests } from "../core/quest-data.js";
-import { sanitizeHTML } from "../../core/utils.js";
+import { sanitizeHTML } from "../../../core/utils.js";
 
 export class WITAQuestImport extends foundry.applications.api.ApplicationV2 {
 

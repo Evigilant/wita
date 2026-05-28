@@ -1,7 +1,7 @@
 import { sanitizeHTML, getRarityColor } from "../../core/utils.js";
 import { WITA_WORKER_STATUSES, getFacilityRoles } from "../data/data.js";
-import { WITA_WORKER_PROFESSIONS, WITA_DEFENDER_RANKS } from "../data/workers/professions/config.js";
-import { WITAWorkerProfession } from "../data/workers/professions/level.js";
+import { WITA_WORKER_PROFESSIONS, WITA_DEFENDER_RANKS } from "../../professions/workers/config.js";
+import { WITAWorkerProfession } from "../../professions/workers/level.js";
 
 export function moraleChip(morale) {
     const level = morale >= 80 ? "high" : morale >= 60 ? "mid" : "low";

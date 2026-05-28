@@ -8,7 +8,7 @@ import {
     complexityDC, getOutcome, getHirelingHealthResult,
     OUTCOME, OUTCOME_LABELS,
 } from "./config.js";
-import { witaSetting } from "../../core/utils.js";
+import { witaSetting } from "../../../core/utils.js";
 import { getQuests, updateQuest, getGuildhallSettings } from "./quest-data.js";
 
 // ── Capacity ──────────────────────────────────────────────────

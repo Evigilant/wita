@@ -14,6 +14,7 @@ import { getBastionData, saveBastionData,
          WITA_SIZE_LABEL, WITA_ORDER_LABEL }  from "./data.js";
 import { assignFacilityToSlot, enlargeSlot,
          setBastionTier, addSlot,
+         startBastionExpansion, addPendingLicense,
          getSizeLimits,
          validateFacilityDrop }               from "./slots.js";
 
@@ -424,7 +425,8 @@ async function _handleTierUpgrade(wf, buyer) {
 
     // GP already charged by Item Piles.
     await setBastionTier(newTier);
-    ui.notifications.info(`WITA | Bastion upgraded to ${WITA_TIER_LABEL[newTier]}!`);
+    await startBastionExpansion(3);
+    ui.notifications.info(`WITA | Bastion upgraded to ${WITA_TIER_LABEL[newTier]}! Expansion will complete in 3 turns.`);
     _refreshPanel();
     return false;
 }
@@ -442,17 +444,11 @@ async function _handleSlotExpansion(wf, buyer) {
 
 async function _handleSizeLicense(wf, buyer) {
     const sizeType = wf.sizeType; // "roomy" or "vast"
-    const data     = getBastionData();
-    const limits   = getSizeLimits(data);
 
-    if (sizeType === "roomy") {
-        data.roomyLicenses = (data.roomyLicenses ?? 0) + 1;
-        await saveBastionData(data);
-        ui.notifications.info(`WITA | Roomy Slot License applied. You can now enlarge one more facility to Roomy (${limits.usedRoomy}/${limits.maxRoomy + 1} used).`);
-    } else if (sizeType === "vast") {
-        data.vastLicenses = (data.vastLicenses ?? 0) + 1;
-        await saveBastionData(data);
-        ui.notifications.info(`WITA | Vast Slot License applied. You can now enlarge one more facility to Vast (${limits.usedVast}/${limits.maxVast + 1} used).`);
+    if (sizeType === "roomy" || sizeType === "vast") {
+        await addPendingLicense(sizeType);
+        const turns = sizeType === "vast" ? 2 : 1;
+        ui.notifications.info(`WITA | ${sizeType === "roomy" ? "Roomy" : "Vast"} Slot License purchased — available in ${turns} turn${turns > 1 ? "s" : ""}.`);
     } else {
         ui.notifications.warn("WITA | Unknown size license type.");
         const cost = getMetaCost(wf.engineerMetaKey);

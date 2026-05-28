@@ -7,7 +7,7 @@ import { DANGER_LEVELS, REWARD_LEVELS, QUEST_STATUS, OUTCOME_LABELS } from "../c
 import { getQuests, getQuestById, deleteQuest, dispatchQuest,
          assignActorToQuest, unassignActorFromQuest, getDispatchedActorIds } from "../core/quest-data.js";
 import { getCapacity, getGuildhallSlot } from "../core/resolution.js";
-import { sanitizeHTML } from "../../core/utils.js";
+import { sanitizeHTML } from "../../../core/utils.js";
 
 export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
 

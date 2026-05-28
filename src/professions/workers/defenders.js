@@ -2,8 +2,8 @@
 // WITA — DEFENDER ROSTER
 // ============================================================
 
-import { sanitizeHTML }                from "../../../core/utils.js";
-import { getBastionData, saveBastionData } from "../data.js";
+import { sanitizeHTML }                    from "../../core/utils.js";
+import { getBastionData, saveBastionData } from "../../bastion/data/data.js";
 
 export async function addDefender(name) {
     if (!game.user.isGM) return;

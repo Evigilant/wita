@@ -1,10 +1,3 @@
-# Build output
-dist/
-*.zip
-
-# Dependencies
-node_modules/
-
 # OS
 .DS_Store
 Thumbs.db
@@ -23,3 +16,6 @@ wita.conf
 # Foundry data (never commit world data)
 *.db
 *.db-journal
+
+# Claude session context
+CLAUDE_CONTEXT.md

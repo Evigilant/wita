@@ -4,7 +4,8 @@ import { getBastionData,
          WITA_HEALTH_ICON, WITA_SIZE_ICON, WITA_SIZE_LABEL,
          WITA_ORDER_ICON, WITA_ORDER_LABEL }           from "../../data/data.js";
 import { calcProductivity, findSlot,
-         assignFacilityToSlot,
+         assignFacilityToSlot, isUnderConstruction,
+         isBastionExpanding,
          addSlot, removeLastEmptySlot }                from "../../data/slots.js";
 import { saveBastionData }                             from "../../data/data.js";
 import { WITAFacilityDetail }                          from "../facility-detail.js";
@@ -14,6 +15,17 @@ export function build(panel) {
     const el        = document.createElement("div");
     const data      = getBastionData();
     const restState = panel._restState ?? { restsRemaining: 0, threshold: 7 };
+    const turnNumber = restState?.bst?.turnNumber ?? 0;
+    const expanding  = isBastionExpanding(data, turnNumber);
+
+    if (expanding) {
+        const turnsLeft = Math.max(0, (data.expansionEndTurn ?? 0) - turnNumber);
+        const banner = document.createElement("div");
+        banner.className = "wita-fd-construction-banner";
+        banner.style.cssText = "margin:0.4rem 0 0.6rem";
+        banner.innerHTML = `<i class="fas fa-hammer"></i><strong>Bastion Expansion in Progress</strong><span>${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""} remaining — all facilities paused</span>`;
+        el.appendChild(banner);
+    }
 
     if (game.user.isGM) {
         const ctrl = document.createElement("div");
@@ -39,7 +51,7 @@ export function build(panel) {
         const grid = document.createElement("div");
         grid.className = "wita-slots-grid";
         for (const slot of (data.basicSlots ?? [])) {
-            grid.appendChild(buildSlotCard(slot, data.workers ?? [], restState, panel));
+            grid.appendChild(buildSlotCard(slot, data.workers ?? [], restState, panel, expanding));
         }
         el.appendChild(grid);
     }
@@ -52,7 +64,7 @@ export function build(panel) {
         const grid = document.createElement("div");
         grid.className = "wita-slots-grid";
         for (const slot of (data.specialSlots ?? [])) {
-            grid.appendChild(buildSlotCard(slot, data.workers ?? [], restState, panel));
+            grid.appendChild(buildSlotCard(slot, data.workers ?? [], restState, panel, expanding));
         }
         el.appendChild(grid);
     }
@@ -64,7 +76,7 @@ export function build(panel) {
     return el;
 }
 
-function buildSlotCard(slot, allWorkers, restState, panel) {
+function buildSlotCard(slot, allWorkers, restState, panel, expanding = false) {
     const wrap = document.createElement("div");
     wrap.className = `wita-slot${slot.facilityUuid ? "" : " empty"}`;
     wrap.dataset.slotId = slot.id;
@@ -91,6 +103,56 @@ function buildSlotCard(slot, allWorkers, restState, panel) {
     const isBasic    = slot.facilityType === "basic";
     const prod       = calcProductivity(slot, allWorkers);
     const tLabel     = timeLabelCompact(restsLeft, !!slot.facilityOrder);
+
+    if (expanding && slot.facilityUuid) {
+        wrap.innerHTML = `
+            <div class="wita-slot-compact wita-slot-construction" data-slot-id="${slot.id}">
+                <img src="${sanitizeHTML(slot.facilityImg ?? "icons/svg/castle.svg")}" alt="" class="wita-slot-thumb" style="opacity:0.4;filter:grayscale(0.7)">
+                <div class="wita-slot-info">
+                    <div class="wita-slot-name">${sanitizeHTML(slot.facilityName ?? "")}</div>
+                    <div class="wita-slot-sub">
+                        <span style="color:var(--color-highlights)"><i class="fas fa-hammer"></i> Expansion in Progress</span>
+                        <span style="color:var(--color-form-hint)">Facility paused</span>
+                    </div>
+                </div>
+                <div class="wita-slot-actions">
+                    <i class="fas fa-circle-info wita-slot-info-icon" title="View details"></i>
+                </div>
+            </div>
+        `;
+        wrap.querySelector(".wita-slot-compact").addEventListener("click", (e) => {
+            if (e.target.closest(".wita-slot-info-icon") || !e.target.closest(".wita-slot-actions")) {
+                _openFacilityDetail(slot, allWorkers, restState, panel);
+            }
+        });
+        return wrap;
+    }
+
+    if (isUnderConstruction(slot)) {
+        const turnNow   = restState?.bst?.turnNumber ?? 0;
+        const turnsLeft = Math.max(0, (slot.buildTurnsRequired ?? 1) - (turnNow - (slot.buildStartTurn ?? 0)));
+        wrap.innerHTML = `
+            <div class="wita-slot-compact wita-slot-construction" data-slot-id="${slot.id}">
+                <img src="${sanitizeHTML(slot.facilityImg ?? "icons/svg/castle.svg")}" alt="" class="wita-slot-thumb" style="opacity:0.5;filter:grayscale(0.6)">
+                <div class="wita-slot-info">
+                    <div class="wita-slot-name">${sanitizeHTML(slot.facilityName ?? "")}</div>
+                    <div class="wita-slot-sub">
+                        <span style="color:var(--color-highlights)"><i class="fas fa-hammer"></i> Under Construction</span>
+                        <span style="color:var(--color-form-hint)">${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""} remaining</span>
+                    </div>
+                </div>
+                <div class="wita-slot-actions">
+                    <i class="fas fa-circle-info wita-slot-info-icon" title="View details"></i>
+                </div>
+            </div>
+        `;
+        wrap.querySelector(".wita-slot-compact").addEventListener("click", (e) => {
+            if (e.target.closest(".wita-slot-info-icon") || !e.target.closest(".wita-slot-actions")) {
+                _openFacilityDetail(slot, allWorkers, restState, panel);
+            }
+        });
+        return wrap;
+    }
 
     const quickOrder = validOrder ? `
         <button class="wita-btn wita-quick-order-btn${slot.facilityOrder ? " order-active" : ""}" data-slot-id="${slot.id}"

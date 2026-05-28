@@ -25,8 +25,8 @@ import { registerBastionPanel }         from "./bastion/ui/panel.js";
 import { handleEngineerPurchase }       from "./professions/merchants/data/purchase.js";
 import { openCustomFacilityDialog }    from "./professions/merchants/ui/dialogs.js";
 
-import { registerGuildhall } from "./guildhall/guildhall-main.js";
-import { registerSmithy }   from "./professions/crafters/smithy/ui/smithy-main.js";
+import { registerGuildhall } from "./bastion/facilities/guildhall.js";
+import { registerSmithy }   from "./bastion/facilities/smithy.js";
 import { rollRandomEncounters, registerEncounterChatHook } from "./encounters/encounters.js";
 
 

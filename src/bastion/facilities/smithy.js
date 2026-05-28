@@ -1,12 +1,7 @@
-// ============================================================
-// WITA Smithy — smithy-main.js
-// Registers hooks and public API for the Smithy sub-module
-// ============================================================
-
-import { SMITHY_ITEM_ID } from "../data/smithy-config.js";
-import { resolveSmithyOrders, getSmithySlots, getSmithyOrder } from "../data/smithy-data.js";
-import { WITASmithyDialog } from "./smithy-dialog.js";
-import { witaSetting } from "../../../../settings/settings.js";
+import { SMITHY_ITEM_ID }                                    from "../../professions/crafters/smithy/data/smithy-config.js";
+import { resolveSmithyOrders, getSmithySlots, getSmithyOrder } from "../../professions/crafters/smithy/data/smithy-data.js";
+import { WITASmithyDialog }                                    from "../../professions/crafters/smithy/ui/smithy-dialog.js";
+import { witaSetting }                                         from "../../settings/settings.js";
 
 export function registerSmithy() {
     _registerOrderIntercept();

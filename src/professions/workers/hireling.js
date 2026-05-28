@@ -2,9 +2,9 @@
 // WITA — HIRELING CRUD
 // ============================================================
 
-import { sanitizeHTML }                          from "../../../core/utils.js";
+import { sanitizeHTML }                          from "../../core/utils.js";
 import { getBastionData, saveBastionData,
-         allSlots, WITA_WORKER_STATUSES }        from "../data.js";
+         allSlots, WITA_WORKER_STATUSES }        from "../../bastion/data/data.js";
 
 const MORALE_MIN = 0;
 const MORALE_MAX = 100;

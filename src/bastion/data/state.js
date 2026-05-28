@@ -17,9 +17,10 @@ import {
     generateReportHTML,
     sendBastionActionMessage,
 } from "./journal.js";
-import { applyMoraleTick } from "./workers/morale.js";
-import { WITAWorkerProfession, awardDefenderXP } from "./workers/professions/level.js";
-import { getProfessionForFacility } from "./workers/professions/config.js";
+import { checkAndCompleteConstruction } from "./slots.js";
+import { applyMoraleTick } from "../../professions/workers/morale.js";
+import { WITAWorkerProfession, awardDefenderXP } from "../../professions/workers/level.js";
+import { getProfessionForFacility } from "../../professions/workers/config.js";
 
 // ── Reentrancy guard ───────────────────────────────────────────
 let WITA_BASTION_RUNNING = false;
@@ -82,6 +83,12 @@ export async function runBastionTurn(turnNumber) {
     console.log(`WITA | Running bastion turn #${turnNumber}`);
 
     try {
+        // Complete any facilities whose construction timer has elapsed.
+        const justBuilt = await checkAndCompleteConstruction(turnNumber);
+        if (justBuilt.length) {
+            ui.notifications.info(`WITA | Construction complete: ${justBuilt.join(", ")}.`);
+        }
+
         const date       = getImperialDate() ?? "Unknown Date";
         const event      = rollBastionEvent();
 

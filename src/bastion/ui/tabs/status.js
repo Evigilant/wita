@@ -1,8 +1,9 @@
 import { sanitizeHTML, witaSetting }          from "../../../core/utils.js";
 import { getBastionData, saveBastionData,
          WITA_TIER_ICON, WITA_TIER_LABEL }    from "../../data/data.js";
-import { getSizeLimits, setBastionTier }       from "../../data/slots.js";
-import { liveDefenderCount }                   from "../../data/workers/index.js";
+import { getSizeLimits, setBastionTier,
+         isBastionExpanding }                  from "../../data/slots.js";
+import { liveDefenderCount }                   from "../../../professions/workers/index.js";
 import { getBastionState, saveBastionState }   from "../../data/state.js";
 
 export async function build(panel) {
@@ -23,6 +24,10 @@ export async function build(panel) {
     const totalSlots = (data.basicSlots?.length ?? 0) + (data.specialSlots?.length ?? 0);
     const tier       = data.bastionTier ?? 0;
     const limits     = getSizeLimits(data);
+    const turnNumber = bst.turnNumber ?? 0;
+    const expanding  = isBastionExpanding(data, turnNumber);
+    const expansionTurnsLeft = expanding ? Math.max(0, data.expansionEndTurn - turnNumber) : 0;
+    const pendingLicenses    = data.pendingLicenses ?? [];
 
     el.innerHTML = `
         <div class="wita-section-label">Bastion</div>
@@ -94,6 +99,23 @@ export async function build(panel) {
             <button class="wita-cap-btn wita-rest-adj" data-delta="1"  title="Add rest">+</button>
             ` : ""}
         </div>
+        ${expanding ? `
+        <div class="wita-fd-construction-banner" style="margin:0.4rem 0">
+            <i class="fas fa-hammer"></i>
+            <strong>Bastion Expansion in Progress</strong>
+            <span>${expansionTurnsLeft} turn${expansionTurnsLeft !== 1 ? "s" : ""} remaining — all facilities paused</span>
+        </div>` : ""}
+        ${pendingLicenses.length ? `
+        <div class="wita-section-label">Pending Licenses</div>
+        <div style="display:flex;flex-direction:column;gap:0.25rem;margin-bottom:0.4rem">
+        ${pendingLicenses.map(pl => {
+            const left = Math.max(0, pl.turnsRequired - (turnNumber - pl.startTurn));
+            return `<div style="font-size:0.72rem;color:var(--color-form-hint);display:flex;align-items:center;gap:0.35rem">
+                <i class="fas fa-hourglass-half" style="color:var(--color-highlights)"></i>
+                <span>${pl.type === "roomy" ? "Roomy" : "Vast"} License — ${left} turn${left !== 1 ? "s" : ""} remaining</span>
+            </div>`;
+        }).join("")}
+        </div>` : ""}
         ${bst.pendingFluctuationType ? `
         <div class="wita-section-label">Pending Action</div>
         <p style="font-size:0.72rem;margin:0 0 0.4rem">Collect Earnings type:<br>

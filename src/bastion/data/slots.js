@@ -117,18 +117,22 @@ export async function assignFacilityToSlot(slotId, uuid) {
     // The catalogue size is stored as facilityBaseSize for enlargement reference.
     const catalogueSize = liveSize ?? cat.size ?? "cramped";
 
-    slot.facilityUuid     = uuid;
-    slot.facilityItemId   = itemId;
-    slot.facilityName     = sanitizeHTML(item.name);
-    slot.facilityImg      = item.img ?? "icons/svg/castle.svg";
-    slot.facilitySize     = "cramped";
-    slot.facilityBaseSize = catalogueSize;  // remember catalogue size for enlargement eligibility
-    slot.facilityOrder    = liveOrder ?? cat.order   ?? "";
-    slot.facilityLevelReq = liveLevel ?? cat.level   ?? null;
-    slot.facilityPrereq   = cat.prereq ?? null;
-    slot.hirelingSlots    = liveH     ?? cat.hirelings ?? 0;
-    slot.defenderSlots    = liveD     ?? cat.defenders ?? 0;
-    // Preserve health, workerIds, built on reassignment.
+    const facilityLevel = liveLevel ?? cat.level ?? 5;
+
+    slot.facilityUuid        = uuid;
+    slot.facilityItemId      = itemId;
+    slot.facilityName        = sanitizeHTML(item.name);
+    slot.facilityImg         = item.img ?? "icons/svg/castle.svg";
+    slot.facilitySize        = "cramped";
+    slot.facilityBaseSize    = catalogueSize;
+    slot.facilityOrder       = null;
+    slot.facilityLevelReq    = facilityLevel;
+    slot.facilityPrereq      = cat.prereq ?? null;
+    slot.hirelingSlots       = liveH ?? cat.hirelings ?? 0;
+    slot.defenderSlots       = liveD ?? cat.defenders ?? 0;
+    slot.built               = false;
+    slot.buildStartTurn      = witaSetting("bastionState")?.turnNumber ?? 0;
+    slot.buildTurnsRequired  = constructionTurnsFor(facilityLevel);
 
     _replaceSlot(data, slot);
     await saveBastionData(data);
@@ -198,9 +202,14 @@ export async function enlargeSlot(slotId, { bypassLicenseCheck = false } = {}) {
             : slot.defenderSlots;
     }
 
+    // Enlargement puts the facility under 1-turn construction.
+    slot.built              = false;
+    slot.buildStartTurn     = witaSetting("bastionState")?.turnNumber ?? 0;
+    slot.buildTurnsRequired = 1;
+
     _replaceSlot(data, slot);
     await saveBastionData(data);
-    ui.notifications.info(`WITA | ${slot.facilityName} enlarged to ${newSize}.`);
+    ui.notifications.info(`WITA | ${slot.facilityName} enlarged to ${newSize} — 1 turn to complete.`);
 }
 
 export async function shrinkSlot(slotId) {
@@ -230,6 +239,91 @@ export async function shrinkSlot(slotId) {
     _replaceSlot(data, slot);
     await saveBastionData(data);
     ui.notifications.info(`WITA | ${slot.facilityName} shrunk to ${slot.facilitySize}.`);
+}
+
+// ── Construction ──────────────────────────────────────────────
+
+export function constructionTurnsFor(facilityLevel) {
+    return Math.max(1, Math.ceil((facilityLevel ?? 5) / 5));
+}
+
+export function isUnderConstruction(slot) {
+    return !slot.built && slot.buildStartTurn != null;
+}
+
+export function isBastionExpanding(data, turnNumber) {
+    return data.expansionEndTurn != null && turnNumber < data.expansionEndTurn;
+}
+
+export async function startBastionExpansion(turnsRequired = 3) {
+    if (!game.user.isGM) return;
+    const data = getBastionData();
+    data.expansionEndTurn = (witaSetting("bastionState")?.turnNumber ?? 0) + turnsRequired;
+    await saveBastionData(data);
+}
+
+export async function addPendingLicense(sizeType) {
+    if (!game.user.isGM) return;
+    const data        = getBastionData();
+    const turnsRequired = sizeType === "vast" ? 2 : 1;
+    data.pendingLicenses = [...(data.pendingLicenses ?? []), {
+        type:           sizeType,
+        startTurn:      witaSetting("bastionState")?.turnNumber ?? 0,
+        turnsRequired,
+    }];
+    await saveBastionData(data);
+}
+
+export async function forceCompleteConstruction(slotId) {
+    if (!game.user.isGM) return;
+    const data = getBastionData();
+    const slot = findSlot(data, slotId);
+    if (!slot) return;
+    slot.built = true;
+    _replaceSlot(data, slot);
+    await saveBastionData(data);
+}
+
+export async function checkAndCompleteConstruction(turnNumber) {
+    if (!game.user.isGM) return [];
+    const data      = getBastionData();
+    const completed = [];
+    let   dirty     = false;
+
+    // Complete individual slot construction.
+    for (const slot of allSlots(data)) {
+        if (slot.built || !slot.facilityUuid || slot.buildStartTurn == null) continue;
+        if ((turnNumber - slot.buildStartTurn) >= (slot.buildTurnsRequired ?? 1)) {
+            slot.built = true;
+            _replaceSlot(data, slot);
+            completed.push(slot.facilityName ?? slot.id);
+            dirty = true;
+        }
+    }
+
+    // Complete pending licenses.
+    const stillPending = [];
+    for (const pl of (data.pendingLicenses ?? [])) {
+        if ((turnNumber - pl.startTurn) >= pl.turnsRequired) {
+            if (pl.type === "roomy") data.roomyLicenses = (data.roomyLicenses ?? 0) + 1;
+            else if (pl.type === "vast") data.vastLicenses = (data.vastLicenses ?? 0) + 1;
+            completed.push(`${pl.type === "roomy" ? "Roomy" : "Vast"} size license`);
+            dirty = true;
+        } else {
+            stillPending.push(pl);
+        }
+    }
+    if (dirty) data.pendingLicenses = stillPending;
+
+    // Clear expansion timer when it elapses.
+    if (data.expansionEndTurn != null && turnNumber >= data.expansionEndTurn) {
+        data.expansionEndTurn = null;
+        completed.push("Bastion expansion");
+        dirty = true;
+    }
+
+    if (dirty) await saveBastionData(data);
+    return completed;
 }
 
 // ── Slot capacity editing ─────────────────────────────────────

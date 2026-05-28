@@ -1,8 +1,8 @@
 // ============================================================
-// WITA — PROFESSION LEVEL
-// Generic configurable leveling class for actor-based crafting
-// professions. Stores EXP, level, recipe knowledge, ingredient
-// stock, and identified-ingredient dedup tracking on actor flags.
+// WITA — CRAFTING PROFESSION LEVEL
+// Actor-based crafting profession class. Stores EXP, level,
+// recipe knowledge, ingredient stock, and identified-ingredient
+// dedup tracking on actor flags.
 //
 // Constructor options:
 //   namespace  — Foundry flag namespace (default: "wita")
@@ -13,7 +13,9 @@
 //   levelGates — { common: 1, uncommon: 3, ... }
 // ============================================================
 
-export class WITACraftingLevel {
+import { WITABaseProfession } from "./base-level.js";
+
+export class WITACraftingLevel extends WITABaseProfession {
     constructor({
         namespace  = "wita",
         prefix,
@@ -22,6 +24,7 @@ export class WITACraftingLevel {
         expTable   = {},
         levelGates = {},
     }) {
+        super();
         this.namespace  = namespace;
         this.prefix     = prefix;
         this.label      = label;
@@ -37,12 +40,7 @@ export class WITACraftingLevel {
     getExp(actor)   { return actor.getFlag(this.namespace, this.#flagKey("Exp")) ?? 0; }
     async setExp(actor, v) { return actor.setFlag(this.namespace, this.#flagKey("Exp"), v); }
 
-    getLevel(actor) {
-        const exp = this.getExp(actor);
-        let level = 1;
-        for (const row of this.levelTable) { if (exp >= row.exp) level = row.level; }
-        return level;
-    }
+    getLevel(actor) { return this._levelForXP(this.getExp(actor)); }
 
     getBonus(actor) {
         return this.levelTable.find(r => r.level === this.getLevel(actor))?.bonus ?? 0;
@@ -54,15 +52,9 @@ export class WITACraftingLevel {
         return next?.exp ?? null;
     }
 
-    // Returns { exp, level, bonus, next, curExp, pct } in one call.
-    // Used by the renderActorSheet craft pill to avoid multiple flag reads.
+    // Returns { exp, level, bonus, next, curExp, pct } — field names match pre-refactor API.
     getState(actor) {
-        const exp    = this.getExp(actor);
-        const level  = this.getLevel(actor);
-        const bonus  = this.getBonus(actor);
-        const next   = this.getExpForNextLevel(actor);
-        const curExp = this.levelTable.find(r => r.level === level)?.exp ?? 0;
-        const pct    = next ? Math.min(100, Math.floor(((exp - curExp) / (next - curExp)) * 100)) : 100;
+        const { xp: exp, level, bonus, next, curXP: curExp, pct } = this._getState(this.getExp(actor));
         return { exp, level, bonus, next, curExp, pct };
     }
 
@@ -79,11 +71,7 @@ export class WITACraftingLevel {
             speaker: ChatMessage.getSpeaker({ actor }),
         });
         if (newLevel > oldLevel) {
-            const row = this.levelTable.find(r => r.level === newLevel);
-            ChatMessage.create({
-                content: `🎉 ${actor.name} reached <strong>${this.label} ${newLevel}</strong>! Crafting bonus is now +${row?.bonus ?? 0}.`,
-                speaker: ChatMessage.getSpeaker({ actor }),
-            });
+            this._postLevelUpChat(actor.name, newLevel, { speakerAlias: actor.name });
         }
         return newTotal;
     }

@@ -6,8 +6,10 @@ import { getBastionData, saveBastionData,
          WITA_ORDER_ICON, WITA_ORDER_LABEL }           from "../data/data.js";
 import { getSizeLimits, findSlot,
          shrinkSlot, enlargeSlot,
-         setSlotHealth, clearSlot }                    from "../data/slots.js";
-import { deleteWorker }                                from "../data/workers/index.js";
+         setSlotHealth, clearSlot,
+         adjustSlotCapacity,
+         isUnderConstruction, forceCompleteConstruction } from "../data/slots.js";
+import { deleteWorker }                                from "../../professions/workers/index.js";
 import { moraleChip, rarityBadge, timeLabel }          from "./panel-utils.js";
 
 export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
@@ -34,6 +36,9 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
         const inner = document.createElement("div");
         inner.className = "wita-fd-body";
 
+        // Always re-read slot from live data so capacity/health changes are reflected.
+        const liveSlot = findSlot(getBastionData(), this._slot?.id);
+        if (liveSlot) this._slot = liveSlot;
         const slot       = this._slot;
         const allFac     = getAllFacilities();
         const meta       = allFac[slot.facilityItemId] ?? {};
@@ -84,17 +89,30 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
             (slot.workerIds ?? []).includes(w.id)
         );
 
+        const building = isUnderConstruction(slot);
+        const turnNow  = this._restState?.bst?.turnNumber ?? 0;
+        const turnsLeft = building
+            ? Math.max(0, (slot.buildTurnsRequired ?? 1) - (turnNow - (slot.buildStartTurn ?? 0)))
+            : 0;
+
         inner.innerHTML = `
+            ${building ? `
+            <div class="wita-fd-construction-banner">
+                <i class="fas fa-hammer"></i>
+                <strong>Under Construction</strong>
+                <span>${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""} remaining</span>
+                ${game.user.isGM ? `<button id="wita-fd-complete-now" class="wita-detail-micro-btn" style="margin-left:auto">Complete Now</button>` : ""}
+            </div>` : ""}
             <div class="wita-fd-top">
                 <div class="wita-fd-img-col">
-                    <img src="${sanitizeHTML(slot.facilityImg ?? "icons/svg/castle.svg")}" class="wita-fd-img">
+                    <img src="${sanitizeHTML(slot.facilityImg ?? "icons/svg/castle.svg")}" class="wita-fd-img"${building ? ` style="opacity:0.55;filter:grayscale(0.5)"` : ""}>
                     <div class="wita-fd-stat">${sIcon} ${WITA_SIZE_LABEL[slot.facilitySize] ?? ""}</div>
                     <div class="wita-fd-stat">${hIcon} ${slot.health ?? ""}</div>
                     ${slot.facilityLevelReq ? `<div class="wita-fd-stat">Lv ${slot.facilityLevelReq}+</div>` : ""}
                     ${meta.prereq && meta.prereq !== "None" ? `<div class="wita-fd-stat" title="${sanitizeHTML(meta.prereq)}">Req ⚠</div>` : ""}
                 </div>
                 <div class="wita-fd-controls-col">
-                    ${orderOptions.length ? `
+                    ${!building && orderOptions.length ? `
                     <div class="wita-fd-field">
                         <label><strong>Order</strong> ${tLabel}</label>
                         <select id="wita-fd-order">
@@ -123,7 +141,15 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
                 ${description ? description : `<em style="color:var(--color-form-hint)">No description available.</em>`}
             </div>
             <div class="wita-fd-hirelings">
-                <div class="wita-fd-section-label" style="margin-top:0.5rem">Hirelings</div>
+                <div class="wita-fd-section-label" style="margin-top:0.5rem;display:flex;align-items:center;gap:0.4rem">
+                    Hirelings
+                    <span style="color:var(--color-form-hint);font-size:0.7rem;font-weight:400">${slotWorkers.length} / ${slot.hirelingSlots ?? 0}</span>
+                    ${game.user.isGM ? `
+                        <span style="margin-left:auto;display:flex;gap:0.2rem">
+                            <button class="wita-detail-micro-btn wita-fd-hireling-cap-dec" title="Decrease hireling capacity">−</button>
+                            <button class="wita-detail-micro-btn wita-fd-hireling-cap-inc" title="Increase hireling capacity">+</button>
+                        </span>` : ""}
+                </div>
                 ${slotWorkers.length === 0
                     ? `<div class="wita-detail-empty">No hirelings assigned.</div>`
                     : slotWorkers.map(w => {
@@ -206,6 +232,11 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
             await refresh();
         });
 
+        el.querySelector("#wita-fd-complete-now")?.addEventListener("click", async () => {
+            await forceCompleteConstruction(slot.id);
+            await refresh();
+        });
+
         el.querySelector("#wita-fd-health")?.addEventListener("change", async (e) => {
             await setSlotHealth(slot.id, e.target.value);
             await refresh();
@@ -242,6 +273,15 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
         el.querySelector(".wita-fd-add-hireling")?.addEventListener("click", () =>
             panel?._openWorkerDialogForSlot(slot.id)
         );
+
+        el.querySelector(".wita-fd-hireling-cap-dec")?.addEventListener("click", async () => {
+            await adjustSlotCapacity(slot.id, "hirelingSlots", -1);
+            await refresh();
+        });
+        el.querySelector(".wita-fd-hireling-cap-inc")?.addEventListener("click", async () => {
+            await adjustSlotCapacity(slot.id, "hirelingSlots", +1);
+            await refresh();
+        });
 
         el.querySelector(".wita-fd-cancel-commission")?.addEventListener("click", async () => {
             const confirmed = await foundry.applications.api.DialogV2.confirm({

@@ -8,7 +8,7 @@ import { liveDefenderCount,
          addDefender, removeDefender,
          setDefenderAlive, updateDefender,
          WITA_DEFENDER_RANKS,
-         WITA_WORKER_PROFESSIONS }                    from "../../data/workers/index.js";
+         WITA_WORKER_PROFESSIONS }                    from "../../../professions/workers/index.js";
 import { buildWorkerFormHTML, buildRoleFieldHTML,
          professionChip, rankBadge }                  from "../panel-utils.js";
 

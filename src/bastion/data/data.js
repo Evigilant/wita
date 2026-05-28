@@ -377,7 +377,8 @@ export function getBastionData() {
     const raw = game.settings.get("wita", "bastion");
     return foundry.utils.mergeObject(
         { bastionTier: 0, basicSlots: [], specialSlots: [], workers: [], defenders: [],
-          roomyLicenses: 0, vastLicenses: 0 },
+          roomyLicenses: 0, vastLicenses: 0,
+          expansionEndTurn: null, pendingLicenses: [] },
         raw ?? {},
         { inplace: false }
     );
@@ -413,6 +414,7 @@ export function _emptySlotFields() {
         facilityOrder: null, facilityLevelReq: null, facilityPrereq: null,
         health: "Pristine", hirelingSlots: 0, defenderSlots: 0,
         workerIds: [], currentOrder: "", built: false,
+        buildStartTurn: null, buildTurnsRequired: 0,
     };
 }
 

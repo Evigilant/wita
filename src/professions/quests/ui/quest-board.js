@@ -7,8 +7,8 @@ import { MODULE_ID, DANGER_LEVELS, REWARD_LEVELS, QUEST_STATUS, OUTCOME_LABELS }
 import { getQuests, getQuestById, deleteQuest, dispatchQuest, assignActorToQuest,
          unassignActorFromQuest, getDispatchedActorIds } from "../core/quest-data.js";
 import { getCapacity, getGuildhallSlot } from "../core/resolution.js";
-import { getBastionData } from "../../bastion/data/data.js"; // used for worker name lookup
-import { sanitizeHTML } from "../../core/utils.js";
+import { getBastionData } from "../../../bastion/data/data.js"; // used for worker name lookup
+import { sanitizeHTML } from "../../../core/utils.js";
 import { WITAQuestDetail } from "./quest-detail.js";
 import { WITAQuestCreate } from "./quest-create.js";
 import { WITAQuestImport } from "./quest-import.js";

@@ -5,8 +5,8 @@
 // ============================================================
 
 import { sanitizeHTML } from "../core/utils.js";
-import { createQuest }  from "../guildhall/core/quest-data.js";
-import { CC_URGENCY_TO_DANGER } from "../guildhall/core/config.js";
+import { createQuest }  from "../professions/quests/core/quest-data.js";
+import { CC_URGENCY_TO_DANGER } from "../professions/quests/core/config.js";
 
 const ENCOUNTER_JOURNAL_ID = "OO7exflPfqtdrqYW";
 const ENCOUNTER_PAGE_NAME  = "Quest Ideas";

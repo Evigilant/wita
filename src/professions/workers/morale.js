@@ -3,7 +3,7 @@
 // Applies per-turn morale changes to all workers.
 // ============================================================
 
-import { allSlots, WITA_MORALE_TICK } from "../data.js";
+import { allSlots, WITA_MORALE_TICK } from "../../bastion/data/data.js";
 
 const MORALE_MIN = 0;
 const MORALE_MAX = 100;

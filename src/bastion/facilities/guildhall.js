@@ -1,15 +1,9 @@
-// ============================================================
-// WITA Guildhall — guildhall-main.js
-// Imported by wita/src/main.js inside Hooks.once("ready")
-// Registers all guildhall hooks, intercepts, and public API
-// ============================================================
-
-import { MODULE_ID, GUILDHALL_ITEM_ID } from "./core/config.js";
-import { registerGuildhallSettings }    from "./guildhall-settings.js";
-import { getQuests }                    from "./core/quest-data.js";
-import { resolveActiveQuests }          from "./core/resolution.js";
-import { WITAQuestBoard }               from "./ui/quest-board.js";
-import { witaSetting }                  from "../core/utils.js";
+import { MODULE_ID, GUILDHALL_ITEM_ID } from "../../professions/quests/core/config.js";
+import { registerGuildhallSettings }    from "../../professions/quests/settings.js";
+import { getQuests }                    from "../../professions/quests/core/quest-data.js";
+import { resolveActiveQuests }          from "../../professions/quests/core/resolution.js";
+import { WITAQuestBoard }               from "../../professions/quests/ui/quest-board.js";
+import { witaSetting }                  from "../../core/utils.js";
 
 export function registerGuildhall() {
     registerGuildhallSettings();
@@ -85,7 +79,6 @@ function _registerSeneschalIntercept() {
 
     const _closeAndOpen = (app) => {
         if (!_isQuestBoardApp(app)) return;
-        // Hide immediately to prevent flash, then close and open quest board
         if (app.element) app.element.style.display = "none";
         setTimeout(() => { app.close(); WITAQuestBoard.open(); }, 0);
     };
@@ -94,13 +87,10 @@ function _registerSeneschalIntercept() {
     Hooks.on("renderNPCActorSheet",  _closeAndOpen);
     Hooks.on("renderBaseActorSheet", _closeAndOpen);
 
-    // Also hook the Seneschal's existing libWrapper intercept via wita.preSetFacilityOrder
-    // won't help here — instead piggyback on the Seneschal's renderActorSheet hook check
     Hooks.on("renderActorSheet", (sheet, html) => {
         if (!_isQuestBoardApp(sheet)) return;
         const el = html instanceof HTMLElement ? html : html[0];
         if (!el) return;
-        // Inject quest board button into sheet header
         if (el.querySelector("#wita-open-quest-board-btn")) return;
         const header = el.closest(".app")?.querySelector(".window-header") ??
                        el.querySelector(".window-header");
@@ -121,7 +111,6 @@ function _registerSeneschalIntercept() {
 // ── Public API ────────────────────────────────────────────────
 
 function _registerPublicAPI() {
-    // Set directly — registerGuildhall() is already called inside Hooks.once("ready")
     if (!game.wita) game.wita = {};
     game.wita.guildhall = {
         openBoard:  () => WITAQuestBoard.open(),

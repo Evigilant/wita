@@ -159,6 +159,8 @@
     transition: background 0.1s;
 }
 .wita-slot-compact:hover { background: var(--color-highlights-15); }
+.wita-slot-construction .wita-slot-compact { cursor: default; }
+.wita-slot-construction .wita-slot-compact:hover { background: none; }
 
 .wita-slot-thumb {
     width: 28px; height: 28px;
@@ -476,6 +478,21 @@
     font-size: 0.78rem;
     font-family: var(--font-primary, "Signika");
 }
+
+.wita-fd-construction-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    background: color-mix(in srgb, var(--color-highlights) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-highlights) 35%, transparent);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--color-highlights);
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+.wita-fd-construction-banner span { color: var(--color-form-hint); }
 
 .wita-fd-top {
     display: flex;
