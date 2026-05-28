@@ -84,3 +84,19 @@ export function witaSetting(key) {
 }
 
 console.log("WITA | Utils loaded.");
+
+/**
+ * Get the text color for a rarity from SC Item Rarity Colors module settings.
+ * Falls back to null if the module isn't active or the setting is disabled.
+ * rarity: "common" | "uncommon" | "rare" | "veryrare" | "legendary"
+ */
+export function getRarityColor(rarity) {
+    try {
+        if (!game.modules.get("sc-item-rarity-colors")?.active) return null;
+        // SC uses "veryRare" not "veryrare"
+        const key = rarity === "veryrare" ? "veryRare" : rarity;
+        const enabled = game.settings.get("sc-item-rarity-colors", `${key}-enable-text-color`);
+        if (!enabled) return null;
+        return game.settings.get("sc-item-rarity-colors", `${key}-text-color`) ?? null;
+    } catch { return null; }
+}

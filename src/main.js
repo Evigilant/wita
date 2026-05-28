@@ -11,22 +11,22 @@ import { WITAHtml } from "./core/html.js";
 import "./settings/settings.js";
 
 // ── Crafting ───────────────────────────────────────────────────
-import { WITA_POTION_CRAFTING } from "./crafting/potion/potion-config.js";
-import { WITA_CRAFTING } from "./crafting/crafting-registry.js";
-import "./crafting/potion/potion-main.js";
+import { WITA_POTION_CRAFTING } from "./professions/crafters/potion/data/potion-config.js";
+import { WITA_CRAFTING } from "./professions/core/registry.js";
+import "./professions/crafters/potion/ui/potion-main.js";
 
 // ── Loot ───────────────────────────────────────────────────────
 import { executeLootAndHarvest } from "./loot/loot.js";
 
 // ── Bastion (registers dnd5e.restCompleted hook as side effect)
-import "./bastion/bastion-state.js";
+import "./bastion/data/state.js";
 
-import { registerBastionPanel }         from "./bastion/bastion-panel.js";
-import { handleEngineerPurchase,
-         openCustomFacilityDialog }     from "./bastion/bastion-engineer.js";
+import { registerBastionPanel }         from "./bastion/ui/panel.js";
+import { handleEngineerPurchase }       from "./professions/merchants/data/purchase.js";
+import { openCustomFacilityDialog }    from "./professions/merchants/ui/dialogs.js";
 
 import { registerGuildhall } from "./guildhall/guildhall-main.js";
-import { registerSmithy }   from "./smithy/smithy-main.js";
+import { registerSmithy }   from "./professions/crafters/smithy/ui/smithy-main.js";
 import { rollRandomEncounters, registerEncounterChatHook } from "./encounters/encounters.js";
 
 

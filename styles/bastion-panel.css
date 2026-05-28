@@ -259,7 +259,7 @@
 .wita-finance-table td { padding: 0.25rem 0.3rem; border-bottom: 1px solid var(--color-fieldset-border); }
 .wita-finance-table tr:last-child td { border-bottom: none; }
 .wita-finance-total { font-size: 0.72rem; font-weight: 700; color: var(--color-highlights); text-align: right; margin-top: 0.2rem; }
-.wita-balance-callout { display: flex; align-items: center; gap: 0.25rem; font-weight:700; padding: 0.3rem 0; }
+.wita-balance-callout { display: flex; align-items: center; gap: 0.25rem; font-weight: 700; padding: 0.3rem 0; }
 .wita-balance-value { font-weight: 600; color: var(--color-highlights); }
 
 /* ── Reports ──────────────────────────────────────────────── */
@@ -409,8 +409,12 @@
     display: flex; align-items: center; gap: 0.3rem;
     padding: 0.15rem 0; font-size: 0.72rem;
 }
-.wita-detail-hireling-name { font-weight: 600; color: var(--color-form-label); flex-shrink: 0; }
-.wita-detail-hireling-role { flex: 1; color: var(--color-form-hint); font-size: 0.65rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wita-detail-hireling-name  { font-weight: 600; color: var(--color-form-label); flex: 1; min-width: 0; }
+.wita-detail-hireling-role  { color: var(--color-form-hint); font-size: 0.65rem; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 6rem; }
+.wita-detail-hireling-morale { font-size: 0.65rem; flex-shrink: 0; }
+.wita-detail-hireling-morale[data-level="high"] { color: var(--color-level-success); }
+.wita-detail-hireling-morale[data-level="mid"]  { color: var(--color-form-hint); }
+.wita-detail-hireling-morale[data-level="low"]  { color: var(--color-level-error); }
 
 .wita-detail-micro-btn {
     font-size: 0.6rem; padding: 0.1rem 0.35rem;

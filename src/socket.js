@@ -3,7 +3,7 @@
 // Registers the socketlib socket and exposes the GM-authority
 // executeLootAndHarvest handler for cross-client invocation.
 // ============================================================
-import { witaPromptGatherEnvironment } from "./crafting/potion/gathering-dialog.js";
+import { witaPromptGatherEnvironment } from "./professions/crafters/potion/ui/gathering-dialog.js";
 
 export function registerSocket(executeLootAndHarvest) {
     Hooks.once("socketlib.ready", () => {

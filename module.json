@@ -2,9 +2,9 @@
     "id": "wita",
     "title": "Whispers in the Abyss",
     "description": "Whispers in the Abyss game module, includes journal entries, loot and harvest actions, looting tables, actors, and scenes.",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "manifest": "https://raw.githubusercontent.com/Evigilant/wita/main/module.json",
-    "download": "https://github.com/Evigilant/wita/archive/refs/tags/v0.4.0.zip",
+    "download": "https://github.com/Evigilant/wita/archive/refs/tags/v0.4.1.zip",
     "socket": true,
     "compatibility": {
         "minimum": "12",
