@@ -13,9 +13,12 @@ import {
     WITA_RARITY_LEVEL_GATES,
     WITA_POTION_CRAFTING_RULES,
 } from "../data/potion-config.js";
+import { getRecipeMaterialCost, getIngredientCost } from "../data/potion-data.js";
 
 // TODO(v14): migrate to ApplicationV2
 export class WITABrewingDialog extends Application {
+    static _scFlagLogged = false;
+
     constructor(actor, options = {}) {
         super(options);
         this.actor          = actor;
@@ -46,18 +49,33 @@ export class WITABrewingDialog extends Application {
         const { level, bonus, exp } = WITA_POTION_CRAFTING.getState(actor);
         const profBonus = actor.system.attributes?.prof ?? 2;
 
-        // Find the player assigned to this actor to read their SC Cauldron recipe knowledge.
-        // If no player is assigned (NPC / GM-only actor), show all recipes.
+        // Filter recipes by SC Cauldron "Known Players" config stored on each recipe item.
+        // If SC Cauldron is inactive or the actor has no assigned player, show all recipes.
         const scActive   = game.modules.get("sc-the-cauldron")?.active === true;
         const actorOwner = game.users.find(u => !u.isGM && u.character?.id === actor.id) ?? null;
-        const knownIds   = actorOwner
-            ? new Set(actorOwner.getFlag("sc-the-cauldron", "knownRecipeIds") ?? [])
-            : null; // null = no player assigned → show all
+
+        // SC Cauldron stores known-player IDs on the recipe item flags.
+        // Log the flag shape once so we can verify the key if needed.
+        if (scActive && this._allRecipes.length && !WITABrewingDialog._scFlagLogged) {
+            WITABrewingDialog._scFlagLogged = true;
+            const sample = this._allRecipes.find(r => Object.keys(r.scFlags).length > 0);
+            console.log("WITA | SC Cauldron recipe flags sample:", sample?.name, sample?.scFlags);
+        }
 
         const kitRecipes = this._allRecipes.filter(r => {
             if (r.kit !== this.selectedKit) return false;
-            if (!scActive || knownIds === null) return true;
-            return knownIds.has(r.uuid) || knownIds.has(r._id);
+            if (!scActive || !actorOwner) return true;
+            // Try all plausible SC Cauldron flag shapes for known-player lists.
+            const flags = r.scFlags ?? {};
+            const playerList =
+                flags.knownPlayers      ??   // array of user IDs (string)
+                flags.knownPlayerIds    ??   // alternative key
+                flags.players           ??   // may be array of objects {id}
+                [];
+            const ids = Array.isArray(playerList)
+                ? playerList.map(p => (typeof p === "object" ? p.id ?? p._id : p))
+                : [];
+            return ids.includes(actorOwner.id);
         });
         const annotated  = kitRecipes.map(r => ({
             ...r,
@@ -93,11 +111,20 @@ export class WITABrewingDialog extends Application {
         if (selectedRecipeDetail) {
             const stockByName = Object.fromEntries(stockItems.map(i => [i.name, i.quantity]));
             selectedRecipeDetail.ingredientDetails = selectedRecipeDetail.ingredientDetails.map(ing => {
-                const have    = stockByName[ing.name] ?? 0;
-                const missing = Math.max(0, ing.qty - have);
-                return { ...ing, have, missing };
+                const have      = stockByName[ing.name] ?? 0;
+                const missing   = Math.max(0, ing.qty - have);
+                const unitCost  = getIngredientCost(ing.name);
+                return { ...ing, have, missing, unitCost, totalCost: unitCost * ing.qty };
             });
             selectedRecipeDetail.canCraft = selectedRecipeDetail.ingredientDetails.every(i => i.missing === 0);
+
+            const rules        = WITA_POTION_CRAFTING_RULES[selectedRecipeDetail.rarity] ?? {};
+            const materialCost = getRecipeMaterialCost(selectedRecipeDetail.name);
+            const recipeFee    = rules.baseCost ?? 0;
+            selectedRecipeDetail.materialCost  = materialCost;
+            selectedRecipeDetail.recipeFee     = recipeFee;
+            selectedRecipeDetail.totalCraftCost = materialCost + recipeFee;
+            selectedRecipeDetail.productValue  = rules.productValue ?? 0;
         }
 
         return {

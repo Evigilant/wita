@@ -4,6 +4,7 @@
 // ============================================================
 
 import { DANGER_LEVELS, REWARD_LEVELS } from "../core/config.js";
+import { witaCascadePosition } from "../../../core/utils.js";
 
 export class WITAQuestCreate extends foundry.applications.api.ApplicationV2 {
 
@@ -22,7 +23,9 @@ export class WITAQuestCreate extends foundry.applications.api.ApplicationV2 {
     static open(board) {
         const existing = foundry.applications.instances.get("wita-quest-create");
         if (existing?.rendered) { existing.bringToFront(); return; }
-        new WITAQuestCreate(board).render({ force: true });
+        const pos = witaCascadePosition("wita-guildhall-board");
+        const dlg = new WITAQuestCreate(board);
+        dlg.render({ force: true }).then(() => { if (pos.top !== undefined) dlg.setPosition(pos); });
     }
 
     async _renderHTML(context, options) {

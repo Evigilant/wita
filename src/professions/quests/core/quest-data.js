@@ -15,7 +15,8 @@ export function getQuests() {
 }
 
 export async function saveQuests(quests) {
-    await game.settings.set(MODULE_ID, FLAG_KEY, quests);
+    if (game.user.isGM) return game.settings.set(MODULE_ID, FLAG_KEY, quests);
+    return globalThis.WITA?.socket?.executeAsGM("witaSetSetting", FLAG_KEY, quests);
 }
 
 export async function createQuest(data) {
@@ -69,7 +70,9 @@ export function getGuildhallSettings() {
 
 export async function saveGuildhallSettings(data) {
     const current = getGuildhallSettings();
-    await game.settings.set(MODULE_ID, SETTINGS_KEY, { ...current, ...data });
+    const merged = { ...current, ...data };
+    if (game.user.isGM) return game.settings.set(MODULE_ID, SETTINGS_KEY, merged);
+    return globalThis.WITA?.socket?.executeAsGM("witaSetSetting", SETTINGS_KEY, merged);
 }
 
 // ── Capacity helpers ──────────────────────────────────────────

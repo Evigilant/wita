@@ -385,7 +385,8 @@ export function getBastionData() {
 }
 
 export async function saveBastionData(data) {
-    await game.settings.set("wita", "bastion", data);
+    if (game.user.isGM) return game.settings.set("wita", "bastion", data);
+    return globalThis.WITA?.socket?.executeAsGM("witaSetSetting", "bastion", data);
 }
 
 export function getEngineeringData() {

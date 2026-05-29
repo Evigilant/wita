@@ -378,6 +378,33 @@
     color: var(--color-level-success, #6dca6d);
 }
 .ing-stock-badge.lacking { color: var(--color-level-error, #e07575); }
+.ing-cost-tag {
+    margin-left: auto;
+    font-size: 0.78em;
+    color: var(--color-form-hint, #8e8e9e);
+    white-space: nowrap;
+}
+.pbg-cost-breakdown {
+    background: var(--color-cool-5-50, rgba(11,10,19,.5));
+    border: 1px solid var(--color-fieldset-border, #3d3d5a);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.82em;
+    margin-bottom: 8px;
+}
+.pbg-cost-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    color: var(--color-form-hint, #8e8e9e);
+}
+.pbg-cost-total {
+    border-top: 1px solid var(--color-fieldset-border, #3d3d5a);
+    margin-top: 3px;
+    padding-top: 4px;
+    font-weight: 700;
+    color: var(--color-highlights, rgb(146,42,96));
+}
 .pbg-brew-actions { display: flex; align-items: center; gap: 8px; }
 .pbg-craft-blocked { font-size: 0.82em; color: var(--color-level-error, #e07575); }
 

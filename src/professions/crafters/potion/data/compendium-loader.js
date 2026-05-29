@@ -71,6 +71,7 @@ export class WITACompendiumLoader {
             .map(doc => {
                 const meta = WITA_RECIPE_META[doc.name];
                 if (!meta) return null;
+                const scFlags = doc.flags?.["sc-the-cauldron"] ?? {};
                 return {
                     _id:         doc._id,
                     name:        doc.name,
@@ -84,6 +85,7 @@ export class WITACompendiumLoader {
                     workHours:   WITA_POTION_CRAFTING_RULES[meta.rarity]?.workHours ?? 8,
                     baseCost:    WITA_POTION_CRAFTING_RULES[meta.rarity]?.baseCost ?? 25,
                     ingredients: WITA_RECIPE_INGREDIENTS[doc.name] ?? [],
+                    scFlags,
                 };
             })
             .filter(Boolean)

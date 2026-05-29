@@ -49,8 +49,21 @@
     <div class="pbg-recipe-stats">
       <div><strong>DC:</strong> {{selectedRecipe.dc}}</div>
       <div><strong>Hours:</strong> {{selectedRecipe.workHours}}</div>
-      <div><strong>Base cost:</strong> {{selectedRecipe.baseCost}} gp</div>
-      <div><strong>Value:</strong> {{selectedRecipe.value}} gp</div>
+      <div><strong>Product Value:</strong> {{selectedRecipe.productValue}} gp</div>
+    </div>
+    <div class="pbg-cost-breakdown">
+      <div class="pbg-cost-row">
+        <span>Ingredients</span>
+        <span>{{selectedRecipe.materialCost}} gp</span>
+      </div>
+      <div class="pbg-cost-row">
+        <span>Recipe Fee</span>
+        <span>{{selectedRecipe.recipeFee}} gp</span>
+      </div>
+      <div class="pbg-cost-row pbg-cost-total">
+        <span>Total Cost</span>
+        <span>{{selectedRecipe.totalCraftCost}} gp</span>
+      </div>
     </div>
     <div class="pbg-ingredients-required">
       <strong>Ingredients:</strong>
@@ -58,9 +71,10 @@
         {{#each selectedRecipe.ingredientDetails}}
         <div class="pbg-ing-entry {{#if uuid}}ing-inspect{{/if}} {{#if missing}}ing-missing{{/if}}"
              {{#if uuid}}data-uuid="{{uuid}}"{{/if}}
-             data-tooltip="{{#if missing}}Missing {{missing}}×{{else}}In bag: {{have}}×{{/if}}{{#if uuid}} — Click to inspect{{/if}}">
+             data-tooltip="{{#if missing}}Missing {{missing}}×{{else}}In bag: {{have}}×{{/if}}{{#if uuid}} — Click to inspect{{/if}} — {{unitCost}} gp each">
           <img src="{{img}}" alt="{{name}}" class="pbg-stock-icon">
           <span>{{name}} ×{{qty}}</span>
+          <span class="ing-cost-tag">{{totalCost}} gp</span>
           <span class="ing-stock-badge {{#if missing}}lacking{{/if}}">{{have}}/{{qty}}</span>
         </div>
         {{/each}}

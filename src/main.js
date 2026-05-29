@@ -35,6 +35,7 @@ import "./combat/combat-log.js";
 
 // ── Socket ────────────────────────────────────────────────────
 import { registerSocket } from "./socket.js";
+import { organizeRecipeCompendium } from "./professions/crafters/potion/data/compendium-organizer.js";
 registerSocket(executeLootAndHarvest);
 
 // ── Public API ────────────────────────────────────────────────
@@ -48,6 +49,7 @@ Hooks.once("ready", () => {
     };
     game.wita.bastion.handleEngineerPurchase   = handleEngineerPurchase;
     game.wita.bastion.openCustomFacilityDialog = openCustomFacilityDialog;
+    game.wita.organizeRecipeCompendium         = organizeRecipeCompendium;
     registerGuildhall(); // must run after game.wita is assigned
     registerSmithy();
     registerEncounterChatHook();

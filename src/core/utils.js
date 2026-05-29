@@ -40,6 +40,39 @@ export function getImperialDate() {
     }
 }
 
+/**
+ * Returns a { top, left } position offset from the most relevant open WITA window,
+ * so popup dialogs don't stack directly on top of their parent.
+ * Reads from the actual DOM rect — ApplicationV2 position.top/left is unreliable
+ * until the user drags the window. Call setPosition() with the result AFTER render.
+ */
+export function witaCascadePosition(parentAppId = "wita-bastion-panel") {
+    const parent = foundry.applications.instances.get(parentAppId)
+                ?? [...foundry.applications.instances.values()]
+                      .find(a => a.id?.startsWith("wita-") && a.rendered);
+    if (!parent) return {};
+
+    // getBoundingClientRect is reliable regardless of how Foundry tracks position internally
+    const rect = parent.element?.getBoundingClientRect?.();
+    if (rect?.width > 0) {
+        return {
+            top:  Math.min(Math.max(rect.top  + 40, 20), window.innerHeight - 250),
+            left: Math.min(Math.max(rect.left + 55, 20), window.innerWidth  - 350),
+        };
+    }
+
+    // Fallback: use stored position object
+    const { top, left } = parent.position ?? {};
+    if (top !== undefined) {
+        return {
+            top:  Math.min(Math.max(top  + 40, 20), window.innerHeight - 250),
+            left: Math.min(Math.max(left + 55, 20), window.innerWidth  - 350),
+        };
+    }
+
+    return {};
+}
+
 export function normalizeName(name) {
     name = name.replace(/\bOrk\b/gi, "Orc");
     const words = name.split(" ");

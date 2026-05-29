@@ -1,4 +1,4 @@
-import { sanitizeHTML }                              from "../../../core/utils.js";
+import { sanitizeHTML, witaCascadePosition }          from "../../../core/utils.js";
 import { getBastionData,
          getAllFacilities,
          WITA_HEALTH_ICON, WITA_SIZE_ICON, WITA_SIZE_LABEL,
@@ -202,7 +202,9 @@ function _openFacilityDetail(slot, allWorkers, restState, panel) {
     const appId   = `wita-facility-detail-${slot.id}`;
     const existing = foundry.applications.instances.get(appId);
     if (existing) { existing.bringToFront(); return; }
-    new WITAFacilityDetail(slot, allWorkers, restState, panel, { id: appId }).render({ force: true });
+    const pos    = witaCascadePosition("wita-bastion-panel");
+    const detail = new WITAFacilityDetail(slot, allWorkers, restState, panel, { id: appId });
+    detail.render({ force: true }).then(() => { if (pos.top !== undefined) detail.setPosition(pos); });
 }
 
 export function bindListeners(el, panel) {

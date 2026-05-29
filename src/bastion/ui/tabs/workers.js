@@ -1,4 +1,4 @@
-import { sanitizeHTML }                              from "../../../core/utils.js";
+import { sanitizeHTML, witaCascadePosition }          from "../../../core/utils.js";
 import { getBastionData, saveBastionData,
          WITA_MORALE_COLOUR,
          allSlots }                                   from "../../data/data.js";
@@ -82,12 +82,12 @@ export function build(panel) {
         const defDiv = document.createElement("div");
         defDiv.className = "wita-defender-roster";
         defDiv.innerHTML = `<div class="wita-defender-count"><strong>${alive.length}</strong> alive${dead.length > 0 ? ` · <span style="color:var(--color-form-hint)">${dead.length} fallen</span>` : ""}</div>`;
-        if (game.user.isGM) {
-            const list = document.createElement("div");
-            list.className = "wita-defender-list";
-            for (const d of defenders) {
-                const row = document.createElement("div");
-                row.className = `wita-defender-row${d.alive ? "" : " dead"}`;
+        const list = document.createElement("div");
+        list.className = "wita-defender-list";
+        for (const d of defenders) {
+            const row = document.createElement("div");
+            row.className = `wita-defender-row${d.alive ? "" : " dead"}`;
+            if (game.user.isGM) {
                 row.innerHTML = `
                     <span>${d.alive ? "⚔️" : "💀"}</span>
                     <input class="wita-inline-name wita-defender-rename" data-id="${d.id}"
@@ -102,10 +102,16 @@ export function build(panel) {
                         <button class="wita-icon-btn danger wita-defender-remove" data-id="${d.id}" title="Remove">✕</button>
                     </div>
                 `;
-                list.appendChild(row);
+            } else {
+                row.innerHTML = `
+                    <span>${d.alive ? "⚔️" : "💀"}</span>
+                    <span style="flex:1;font-size:0.8rem;padding:0 0.2rem">${sanitizeHTML(d.name)}</span>
+                    ${rankBadge(d)}
+                `;
             }
-            defDiv.appendChild(list);
+            list.appendChild(row);
         }
+        defDiv.appendChild(list);
         el.appendChild(defDiv);
     }
 
@@ -288,6 +294,8 @@ export async function openDefenderDialog(panel, defenderId) {
         </div>
     `;
 
+    const _defPos = witaCascadePosition("wita-bastion-panel");
+    if (_defPos.top !== undefined) Hooks.once("renderDialogV2", (app) => app.setPosition(_defPos));
     await foundry.applications.api.DialogV2.prompt({
         window:  { title: `Edit Defender — ${defender.name}` },
         content,
@@ -333,6 +341,8 @@ export async function openWorkerDialog(panel, workerId) {
         : "";
 
     _attachRoleListener(slots);
+    const _wPos = witaCascadePosition("wita-bastion-panel");
+    if (_wPos.top !== undefined) Hooks.once("renderDialogV2", (app) => app.setPosition(_wPos));
     await foundry.applications.api.DialogV2.prompt({
         window:  { title: workerId ? `Edit Hireling — ${worker?.name ?? ""}` : "Add Hireling" },
         content: buildWorkerFormHTML(worker, slots, curSlot),
@@ -369,6 +379,8 @@ export async function openWorkerDialogForSlot(panel, slotId) {
     const slots = allSlots(data).filter(s => s.facilityUuid);
 
     _attachRoleListener(slots);
+    const _wsPos = witaCascadePosition("wita-bastion-panel");
+    if (_wsPos.top !== undefined) Hooks.once("renderDialogV2", (app) => app.setPosition(_wsPos));
     await foundry.applications.api.DialogV2.prompt({
         window:  { title: "Add Hireling" },
         content: buildWorkerFormHTML(null, slots, slotId ?? ""),

@@ -7,7 +7,7 @@ import { DANGER_LEVELS, REWARD_LEVELS, QUEST_STATUS, OUTCOME_LABELS } from "../c
 import { getQuests, getQuestById, deleteQuest, dispatchQuest,
          assignActorToQuest, unassignActorFromQuest, getDispatchedActorIds } from "../core/quest-data.js";
 import { getCapacity, getGuildhallSlot } from "../core/resolution.js";
-import { sanitizeHTML } from "../../../core/utils.js";
+import { sanitizeHTML, witaCascadePosition } from "../../../core/utils.js";
 
 export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
 
@@ -31,7 +31,9 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
         const appId  = `wita-quest-detail-${questId}`;
         const existing = foundry.applications.instances.get(appId);
         if (existing?.rendered) { existing.bringToFront(); return; }
-        new WITAQuestDetail(questId, board, { id: appId }).render({ force: true });
+        const pos = witaCascadePosition("wita-guildhall-board");
+        const dlg = new WITAQuestDetail(questId, board, { id: appId });
+        dlg.render({ force: true }).then(() => { if (pos.top !== undefined) dlg.setPosition(pos); });
     }
 
     async _renderHTML(context, options) {
@@ -146,7 +148,7 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
                 ${assignedRows || `<div class="wita-qd-empty-hirelings">No hirelings assigned.</div>`}
             </div>
 
-            ${isGM && isAvail && assignedActors.length < quest.maxSlots && dispatched.length < capacity.maxHirelingsOut ? `
+            ${isAvail && assignedActors.length < quest.maxSlots && dispatched.length < capacity.maxHirelingsOut ? `
             <div class="wita-qd-assign-row">
                 <select id="wita-qd-actor-sel">
                     <option value="">— Assign a hireling —</option>
@@ -200,7 +202,7 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
                 ${quest.rewardNarrative.map(r => `<li>${sanitizeHTML(r.name)}</li>`).join("")}
             </ul>` : ""}
 
-            ${isGM ? `
+            ${(isAvail && assignedActors.length > 0) || isActive || isGM ? `
             <div class="wita-qd-footer">
                 ${isAvail && assignedActors.length > 0 ? `<button class="wita-gb-btn primary" id="wita-qd-dispatch">
                     <i class="fas fa-paper-plane"></i> Dispatch
@@ -208,9 +210,9 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
                 ${isActive ? `<div class="wita-qd-active-note">
                     <i class="fas fa-hourglass-half"></i> Resolves at next bastion turn
                 </div>` : ""}
-                <button class="wita-detail-micro-btn danger" id="wita-qd-delete" style="margin-left:auto">
+                ${isGM ? `<button class="wita-detail-micro-btn danger" id="wita-qd-delete" style="margin-left:auto">
                     Delete Quest
-                </button>
+                </button>` : ""}
             </div>` : ""}
         `;
     }

@@ -16,7 +16,8 @@ import {
 } from "../data/smithy-data.js";
 import { getFinancialSummary }            from "../../../../bastion/data/finance.js";
 import { getBastionData }                 from "../../../../bastion/data/data.js";
-import { sanitizeHTML, getRarityColor }   from "../../../../core/utils.js";
+import { sanitizeHTML, getRarityColor,
+         witaCascadePosition }             from "../../../../core/utils.js";
 import { witaSetting }                    from "../../../../settings/settings.js";
 
 export class WITASmithyDialog extends foundry.applications.api.ApplicationV2 {
@@ -42,8 +43,10 @@ export class WITASmithyDialog extends foundry.applications.api.ApplicationV2 {
         const appId   = `wita-smithy-dialog-${slotId}`;
         const existing = foundry.applications.instances.get(appId);
         if (existing?.rendered) { existing.bringToFront(); return; }
+        const pos = witaCascadePosition("wita-bastion-panel");
         const dlg = new WITASmithyDialog(slotId, { id: appId });
         await dlg.render({ force: true });
+        if (pos.top !== undefined) dlg.setPosition(pos);
     }
 
     // ── Helpers ───────────────────────────────────────────────

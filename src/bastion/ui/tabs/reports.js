@@ -1,71 +1,90 @@
-import { sanitizeHTML, witaSetting } from "../../../core/utils.js";
+import { sanitizeHTML } from "../../../core/utils.js";
 
 export function build(_panel) {
-    const el      = document.createElement("div");
-    const journal = game.journal.getName(witaSetting("bastionName") ?? "");
-    if (!journal) {
-        el.innerHTML = `<div class="wita-empty">Bastion journal not found. Run a bastion turn first.</div>`;
+    const el  = document.createElement("div");
+    let raw;
+    try { raw = game.settings.get("wita", "bastionReports"); } catch(_) { raw = null; }
+    const detailed = Array.isArray(raw?.detailed) ? raw.detailed : [];
+    const archive  = Array.isArray(raw?.archive)  ? raw.archive  : [];
+
+    if (!detailed.length && !archive.length) {
+        el.innerHTML = `<div class="wita-empty">No reports yet. Reports appear here after each bastion turn.</div>`;
         return el;
     }
 
-    const pages = journal.pages.contents
-        .filter(p => !p.name?.toLowerCase().includes("archive"))
-        .sort((a, b) => (b.sort ?? 0) - (a.sort ?? 0));
+    if (detailed.length) {
+        const lbl = document.createElement("div");
+        lbl.className = "wita-section-label";
+        lbl.textContent = "Recent Reports";
+        el.appendChild(lbl);
 
-    if (!pages.length) {
-        el.innerHTML = `<div class="wita-empty">No reports yet.</div>`;
-        return el;
+        for (const report of detailed) {
+            el.appendChild(_buildReportCard(report));
+        }
     }
 
-    const list = document.createElement("div");
-    list.className = "wita-report-list";
-    for (const page of pages) {
-        const s   = page.getFlag?.("wita", "reportSummary") ?? _fallbackSummary(page);
-        const row = document.createElement("div");
-        row.className = "wita-report-row";
-        row.dataset.pageId    = page.id;
-        row.dataset.journalId = journal.id;
-        row.innerHTML = `
-            <span class="wita-report-turn">Turn ${sanitizeHTML(String(s?.turnNumber ?? "?"))}</span>
-            <span class="wita-report-date">${sanitizeHTML(s?.date ?? page.name ?? "")}</span>
-            <span class="wita-report-event">${sanitizeHTML(s?.eventCategory ?? "")}</span>
-            ${s?.totalIncome ? `<span class="wita-report-income">${sanitizeHTML(s.totalIncome)}</span>` : ""}
-            <i class="fas fa-external-link-alt" style="font-size:0.55rem;opacity:0.4;flex-shrink:0"></i>
+    if (archive.length) {
+        const lbl = document.createElement("div");
+        lbl.className = "wita-section-label";
+        lbl.style.marginTop = "0.75rem";
+        lbl.textContent = "Archive";
+        el.appendChild(lbl);
+
+        const tbl = document.createElement("table");
+        tbl.className = "wita-finance-table";
+        tbl.innerHTML = `
+            <thead><tr>
+                <th>Turn</th><th>Date</th><th>Event</th><th style="text-align:right">Income</th>
+            </tr></thead>
+            <tbody>
+                ${archive.map(a => `
+                <tr>
+                    <td style="font-weight:600">#${sanitizeHTML(String(a.turnNumber ?? "?"))}</td>
+                    <td style="color:var(--color-form-hint);font-size:0.72rem">${sanitizeHTML(a.date ?? "")}</td>
+                    <td style="font-size:0.72rem">${sanitizeHTML(a.eventCategory ?? "")}</td>
+                    <td style="text-align:right;font-size:0.72rem;color:var(--color-highlights)">${sanitizeHTML(a.totalIncome ?? "—")}</td>
+                </tr>`).join("")}
+            </tbody>
         `;
-        list.appendChild(row);
-    }
-    el.appendChild(list);
-
-    const archive = journal.pages.contents.find(p => p.name?.toLowerCase().includes("archive"));
-    if (archive) {
-        el.innerHTML += `<p style="font-size:0.65rem;color:var(--color-form-hint);margin-top:0.5rem;text-align:center">
-            <a class="wita-open-archive" data-page-id="${archive.id}" data-journal-id="${journal.id}" href="#" style="color:var(--color-highlights)">Open archive</a>
-        </p>`;
+        el.appendChild(tbl);
     }
 
     return el;
 }
 
-export function bindListeners(el, _panel) {
-    el.querySelectorAll(".wita-report-row").forEach(row =>
-        row.addEventListener("click", () => {
-            game.journal.get(row.dataset.journalId)?.sheet.render(true, { pageId: row.dataset.pageId });
-        })
-    );
-    el.querySelectorAll(".wita-open-archive").forEach(link =>
-        link.addEventListener("click", e => {
-            e.preventDefault();
-            game.journal.get(link.dataset.journalId)?.sheet.render(true, { pageId: link.dataset.pageId });
-        })
-    );
+function _buildReportCard(report) {
+    const card = document.createElement("div");
+    card.className = "wita-report-card";
+    card.style.cssText = "border:1px solid var(--color-fieldset-border);border-radius:4px;margin-bottom:0.5rem;overflow:hidden";
+
+    const header = document.createElement("div");
+    header.className = "wita-report-card-header";
+    header.style.cssText = "display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.6rem;cursor:pointer;background:var(--color-bg-btn);user-select:none";
+    header.innerHTML = `
+        <span style="font-weight:700;font-size:0.8rem">Turn #${sanitizeHTML(String(report.turnNumber ?? "?"))}</span>
+        <span style="font-size:0.72rem;color:var(--color-form-hint);flex:1">${sanitizeHTML(report.date ?? "")}</span>
+        ${report.eventCategory ? `<span class="wita-badge" style="font-size:0.65rem">${sanitizeHTML(report.eventCategory)}</span>` : ""}
+        ${report.totalIncome ? `<span style="font-size:0.72rem;color:var(--color-highlights)">${sanitizeHTML(report.totalIncome)}</span>` : ""}
+        <i class="fas fa-chevron-down wita-report-chevron" style="font-size:0.65rem;transition:transform 0.2s"></i>
+    `;
+
+    const body = document.createElement("div");
+    body.className = "wita-report-card-body";
+    body.style.cssText = "padding:0.5rem 0.6rem;font-size:0.75rem;display:none;overflow-y:auto;max-height:320px";
+    if (report.html) body.innerHTML = report.html;
+
+    header.addEventListener("click", () => {
+        const open = body.style.display !== "none";
+        body.style.display  = open ? "none" : "block";
+        const chevron = header.querySelector(".wita-report-chevron");
+        if (chevron) chevron.style.transform = open ? "" : "rotate(180deg)";
+    });
+
+    card.appendChild(header);
+    card.appendChild(body);
+    return card;
 }
 
-function _fallbackSummary(page) {
-    const c = page.text?.content ?? "";
-    return {
-        turnNumber:    c.match(/data-turn-number="(\d+)"/)?.[1],
-        date:          c.match(/data-report-date="([^"]+)"/)?.[1],
-        eventCategory: c.match(/data-event-category="([^"]+)"/)?.[1],
-        totalIncome:   c.match(/data-total-income="([^"]+)"/)?.[1],
-    };
+export function bindListeners(_el, _panel) {
+    // Reports tab is read-only; interactivity is handled inline above
 }

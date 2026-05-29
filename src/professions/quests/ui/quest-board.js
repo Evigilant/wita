@@ -155,7 +155,9 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
         // Drop zone — accept quests dragged from other columns
         const statusMap = { "Available": "available", "Active": "active", "Completed": "completed" };
         const targetStatus = statusMap[title];
-        if (targetStatus && isGM) {
+        // Players can drag Available→Active; GMs can drag between any columns
+        const allowDrop = targetStatus && (isGM || targetStatus === "active");
+        if (allowDrop) {
             list.addEventListener("dragover", e => { e.preventDefault(); list.classList.add("drag-over"); });
             list.addEventListener("dragleave", () => list.classList.remove("drag-over"));
             list.addEventListener("drop", async e => {
@@ -164,10 +166,19 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
                 try {
                     const { questId } = JSON.parse(e.dataTransfer.getData("text/plain"));
                     if (!questId) return;
-                    const { updateQuest } = await import("../core/quest-data.js");
-                    const quest = (await import("../core/quest-data.js")).getQuestById(questId);
+                    const { updateQuest, getQuestById } = await import("../core/quest-data.js");
+                    const quest = getQuestById(questId);
                     if (!quest || quest.status === targetStatus) return;
-                    await updateQuest(questId, { status: targetStatus });
+                    // Players may only move Available→Active (dispatch requires hirelings)
+                    if (!isGM && !(quest.status === "available" && targetStatus === "active")) return;
+                    if (!isGM && quest.assignedActorIds.length === 0) {
+                        ui.notifications.warn("WITA | Assign hirelings before dispatching a quest.");
+                        return;
+                    }
+                    const turnNumber = game.settings.get("wita", "bastionState")?.turnNumber ?? 0;
+                    const changes = { status: targetStatus };
+                    if (targetStatus === "active") changes.turnAssigned = turnNumber;
+                    await updateQuest(questId, changes);
                     const board = foundry.applications.instances.get("wita-guildhall-board");
                     if (board?.rendered) board.render({ force: true });
                 } catch(err) { console.warn("WITA | Quest drop failed:", err); }

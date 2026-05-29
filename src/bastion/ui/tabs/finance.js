@@ -1,7 +1,7 @@
 import { sanitizeHTML }          from "../../../core/utils.js";
 import { getFinancialSummary }   from "../../data/finance.js";
 
-export function build(_panel) {
+export async function build(_panel) {
     const el  = document.createElement("div");
     const fin = getFinancialSummary();
 
@@ -10,7 +10,7 @@ export function build(_panel) {
         return el;
     }
 
-    const { propertyIncome, totalPropertyIncome, ownedStocks, bankBalance, currency } = fin;
+    const { propertyIncome, totalPropertyIncome, ownedStocks, bankBalance, currency, weeksPerMonth } = fin;
 
     el.innerHTML += `<div class="wita-section-label">Property Income</div>`;
     if (!propertyIncome?.length) {
@@ -19,18 +19,24 @@ export function build(_panel) {
         const tbl = document.createElement("table");
         tbl.className = "wita-finance-table";
         tbl.innerHTML = `
-            <thead><tr><th>Property</th><th>Type</th><th style="text-align:right">Monthly</th><th style="text-align:right">Weekly</th></tr></thead>
+            <thead><tr>
+                <th>Property</th>
+                <th>Type</th>
+                <th style="text-align:right">Weekly</th>
+                <th style="text-align:right" title="Weekly × ${weeksPerMonth} weeks/month">Monthly ×${weeksPerMonth}</th>
+            </tr></thead>
             <tbody>
                 ${propertyIncome.map(p => `
                 <tr>
                     <td>${sanitizeHTML(p.name)}</td>
                     <td style="color:var(--color-form-hint)">${sanitizeHTML(p.type)}</td>
-                    <td style="text-align:right">${p.monthlyIncome} ${currency}</td>
                     <td style="text-align:right;font-weight:600">${p.weeklyIncome} ${currency}</td>
+                    <td style="text-align:right;color:var(--color-form-hint)">${p.monthlyIncome} ${currency}</td>
                 </tr>`).join("")}
                 <tr style="border-top:1px solid var(--color-fieldset-border)">
-                    <td colspan="3" style="text-align:right;font-weight:700">Total Weekly</td>
+                    <td colspan="2" style="text-align:right;font-weight:700">Total Weekly</td>
                     <td style="text-align:right;font-weight:700;color:var(--color-highlights)">${totalPropertyIncome} ${currency}</td>
+                    <td></td>
                 </tr>
             </tbody>
         `;

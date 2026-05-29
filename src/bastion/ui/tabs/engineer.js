@@ -1,4 +1,4 @@
-import { sanitizeHTML }                              from "../../../core/utils.js";
+import { sanitizeHTML, witaCascadePosition }          from "../../../core/utils.js";
 import { getEngineeringData, saveEngineeringData,
          getAllFacilities,
          WITA_DMG_FACILITIES,
@@ -301,8 +301,10 @@ export async function openCostDialog(panel, itemIdOrKey, isMeta) {
         </div>
     `).join("");
 
+    const _engPos = witaCascadePosition("wita-bastion-panel");
+    if (_engPos.top !== undefined) Hooks.once("renderDialogV2", (app) => app.setPosition(_engPos));
     await foundry.applications.api.DialogV2.prompt({
-        window:  { title: `Edit Costs — ${sanitizeHTML(name)}` },
+        window: { title: `Edit Costs — ${sanitizeHTML(name)}` },
         content: `
             <div style="display:flex;flex-direction:column;gap:0.5rem;padding:0.25rem;font-family:var(--font-primary)">
                 <p style="margin:0;font-weight:700;font-size:0.85rem">${sanitizeHTML(name)}</p>

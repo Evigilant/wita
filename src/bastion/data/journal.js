@@ -405,3 +405,52 @@ Write one sentence per asset reflecting the ${event.categoryName} event outcome.
         sentence: sanitizeHTML(sentences[i] ?? `${asset.name} experienced ${event.categoryName} this turn.`),
     }));
 }
+
+// ── In-Panel Report Storage ───────────────────────────────────────────────────
+// Reports are stored in the "bastionReports" world setting instead of a journal.
+// Structure: { detailed: [ReportEntry, ...], archive: [ArchiveEntry, ...] }
+// ReportEntry:  { id, turnNumber, date, eventCategory, totalIncome, html, createdAt }
+// ArchiveEntry: { id, turnNumber, date, eventCategory, totalIncome }
+
+export async function saveReportToPanel(turnNumber, date, reportHTML, event, financial) {
+    const maxDetailed = witaSetting("maxDetailedReports") ?? 2;
+
+    let raw;
+    try { raw = game.settings.get("wita", "bastionReports"); } catch(_) { raw = null; }
+    const stored = {
+        detailed: Array.isArray(raw?.detailed) ? [...raw.detailed] : [],
+        archive:  Array.isArray(raw?.archive)  ? [...raw.archive]  : [],
+    };
+
+    const totalIncome = financial
+        ? `${financial.totalPropertyIncome} ${financial.currency}/wk`
+        : null;
+
+    stored.detailed.unshift({
+        id:            foundry.utils.randomID(),
+        turnNumber,
+        date,
+        eventCategory: sanitizeHTML(event?.categoryName ?? ""),
+        totalIncome,
+        html:          reportHTML,
+        createdAt:     Date.now(),
+    });
+
+    // Overflow oldest detailed reports into the archive (strip html)
+    while (stored.detailed.length > maxDetailed) {
+        const old = stored.detailed.pop();
+        stored.archive.unshift({
+            id:            old.id,
+            turnNumber:    old.turnNumber,
+            date:          old.date,
+            eventCategory: old.eventCategory,
+            totalIncome:   old.totalIncome,
+        });
+    }
+
+    // Keep archive bounded (max 50 entries)
+    stored.archive = stored.archive.slice(0, 50);
+
+    await game.settings.set("wita", "bastionReports", stored);
+    console.log(`WITA | Report saved for turn #${turnNumber} (${stored.detailed.length} detailed, ${stored.archive.length} archived).`);
+}

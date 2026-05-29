@@ -183,6 +183,73 @@ export const WITA_RECIPE_META = {
     "Water of Death":                { kit:"poisoner",  rarity:"veryRare" },
 };
 
+// ── Ingredient cost tables ────────────────────────────────────────────────────
+
+export const WITA_INGREDIENT_RARITY_COST = {
+    common:    5,
+    uncommon: 10,
+    rare:     50,
+    veryRare: 150,
+    legendary: 500,
+};
+
+// Costs for purchased/harvested ingredients that aren't in the gathering system.
+// Monster parts: priced by approximate rarity of the source creature.
+// Supplies (oil, charcoal, etc.): shop prices.
+// Recipe-as-ingredient: market (product) value of that recipe's output.
+export const WITA_SPECIAL_INGREDIENT_COSTS = {
+    "Air Elemental Wisp":      50,   // planar, rare
+    "Ankheg Ichor":            50,   // CR 2 large insect, rare harvest
+    "Basic Poison":            50,   // common recipe product value
+    "Charcoal":                 5,   // common supply
+    "Crawler Mucus":           10,   // CR ½ insect, uncommon
+    "Dragon's Blood":          50,   // rare monster harvest
+    "Drider Venom":            50,   // CR 6, drow creature
+    "Eagle's Claw":             5,   // common bird
+    "Eagle's Feather":          5,   // common bird
+    "Ectoplasm":               10,   // undead residue, uncommon
+    "Finely Ground Iron":       5,   // common smithing material
+    "Fire Elemental Ember":    50,   // planar, rare
+    "Flask of Oil":             2,   // common supply
+    "Giant Wolf Spider Hair":   5,   // CR ¼, common
+    "Giant's Nail (Cloud)":    50,   // CR 9 cloud giant, rare
+    "Imp Heart":               50,   // fiend, rare harvest
+    "Ink":                      5,   // common supply
+    "Lightning Struck Metal":  50,   // rare find
+    "Nothic Tears":            10,   // CR 2 aberration, uncommon
+    "Perfume":                  5,   // common supply
+    "Purple Worm Poison":     150,   // CR 15, very rare
+    "Quipper Scale":            5,   // common aquatic creature
+    "Remorhaz Ichor":         150,   // CR 11, very rare
+    "Serpent's Venom":         10,   // CR ¼ snake, uncommon
+    "Skulk Claw":              50,   // rare shadowfell creature
+    "Soothsalt Geode":         10,   // uncommon mineral
+    "Sugar":                    2,   // common supply
+    "Tea of Refreshment":     200,   // uncommon recipe product value
+    "Water Elemental Droplet":  50,  // planar, rare
+    "Willowshade Oil":         50,   // common recipe product value
+    "Wyvern Poison":           50,   // CR 7, rare harvest
+};
+
+/** Cost in GP to purchase a single unit of a named ingredient. */
+export function getIngredientCost(name) {
+    if (WITA_SPECIAL_INGREDIENT_COSTS[name] !== undefined)
+        return WITA_SPECIAL_INGREDIENT_COSTS[name];
+    const meta = WITA_INGREDIENT_META[name];
+    if (meta) return WITA_INGREDIENT_RARITY_COST[meta.gatherRarity] ?? 5;
+    return 5; // unknown — assume common
+}
+
+/**
+ * Total purchase cost of all ingredients for a recipe.
+ * Does not include the baseCost (recipe crafting fee) — add that separately
+ * from WITA_POTION_CRAFTING_RULES[rarity].baseCost.
+ */
+export function getRecipeMaterialCost(recipeName) {
+    const ingredients = WITA_RECIPE_INGREDIENTS[recipeName] ?? [];
+    return ingredients.reduce((sum, ing) => sum + getIngredientCost(ing), 0);
+}
+
 export const WITA_RECIPE_INGREDIENTS = {
     // Alchemist – Common
     "Alchemist's Fire":              ["Fire Peas","Flask of Oil"],

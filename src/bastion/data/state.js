@@ -11,11 +11,9 @@ import { getFinancialSummary } from "./finance.js";
 import { getBastionData, saveBastionData, allSlots } from "./data.js";
 import {
     generateAssetNarratives,
-    getOrCreateBastionJournal,
-    archiveOldReports,
-    addSeneschalReportPage,
     generateReportHTML,
     sendBastionActionMessage,
+    saveReportToPanel,
 } from "./journal.js";
 import { checkAndCompleteConstruction } from "./slots.js";
 import { applyMoraleTick } from "../../professions/workers/morale.js";
@@ -47,7 +45,8 @@ export async function getBastionState() {
 }
 
 export async function saveBastionState(state) {
-    await game.settings.set("wita", "bastionState", state);
+    if (game.user.isGM) return game.settings.set("wita", "bastionState", state);
+    return globalThis.WITA?.socket?.executeAsGM("witaSetSetting", "bastionState", state);
 }
 
 // ── Long Rest Handler ──────────────────────────────────────────
@@ -105,12 +104,10 @@ export async function runBastionTurn(turnNumber) {
 
         const financialEnabled = witaSetting("enableFinancialSystem");
         const financial        = financialEnabled ? getFinancialSummary() : null;
-        const narratives       = financialEnabled ? await generateAssetNarratives(event, financial) : [];
-        const reportHTML       = generateReportHTML(turnNumber, date, event, facilities, financial, narratives);
-        const journal          = await getOrCreateBastionJournal();
+        const narratives = financialEnabled ? await generateAssetNarratives(event, financial) : [];
+        const reportHTML = generateReportHTML(turnNumber, date, event, facilities, financial, narratives);
 
-        await archiveOldReports(journal);
-        await addSeneschalReportPage(journal, turnNumber, date, reportHTML, event, financial);
+        await saveReportToPanel(turnNumber, date, reportHTML, event, financial);
 
         const state = await getBastionState();
         state.pendingFluctuationType = event.fluctuationType;

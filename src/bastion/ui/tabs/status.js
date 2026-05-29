@@ -5,6 +5,8 @@ import { getSizeLimits, setBastionTier,
          isBastionExpanding }                  from "../../data/slots.js";
 import { liveDefenderCount }                   from "../../../professions/workers/index.js";
 import { getBastionState, saveBastionState }   from "../../data/state.js";
+import { getQuests }                           from "../../../professions/quests/core/quest-data.js";
+import { DANGER_LEVELS }                       from "../../../professions/quests/core/config.js";
 
 export async function build(panel) {
     const el        = document.createElement("div");
@@ -116,10 +118,46 @@ export async function build(panel) {
             </div>`;
         }).join("")}
         </div>` : ""}
-        ${bst.pendingFluctuationType ? `
+        ${game.user.isGM && bst.pendingFluctuationType ? `
         <div class="wita-section-label">Pending Action</div>
         <p style="font-size:0.72rem;margin:0 0 0.4rem">Collect Earnings type:<br>
             <span class="wita-badge">${sanitizeHTML(bst.pendingFluctuationType)}</span></p>` : ""}
+        ${(() => {
+            const orders = (game.wita?.smithy?.getOrders?.() ?? []).filter(o => o.order);
+            if (!orders.length) return "";
+            const turnNumber = bst.turnNumber ?? 0;
+            const items = orders.map(({ slotId, order }) => {
+                const left = Math.max(0, order.turnsRequired - (turnNumber - order.turnStarted));
+                return `<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;padding:0.15rem 0">
+                    <i class="fas fa-hammer" style="color:var(--color-highlights)"></i>
+                    <span><strong>${sanitizeHTML(order.itemName)}</strong></span>
+                    <span style="color:var(--color-form-hint)">${left} turn${left !== 1 ? "s" : ""} left</span>
+                </div>`;
+            }).join("");
+            return `<div class="wita-section-label">Smithy Commissions</div><div style="margin:0 0 0.4rem">${items}</div>`;
+        })()}
+        ${(() => {
+            const activeQuests = getQuests().filter(q => q.status === "active");
+            if (!activeQuests.length) return "";
+            const turnNumber = bst.turnNumber ?? 0;
+            const rows = activeQuests.map(q => {
+                const skulls = q.dangerLevel ?? 2;
+                const danger = DANGER_LEVELS[skulls] ?? DANGER_LEVELS[2];
+                const turnsLeft = q.turnAssigned != null
+                    ? Math.max(0, (q.turnAssigned + 1) - turnNumber)
+                    : 1;
+                const skullHtml = `<span style="color:${danger.colour};letter-spacing:-0.1em">${"💀".repeat(skulls)}</span>`;
+                const timeLabel = turnsLeft === 0 ? `<span style="color:var(--color-level-warning)">resolves this turn</span>`
+                                                  : `${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""}`;
+                return `<div class="wita-quest-status-row" data-quest-id="${q.id}" style="display:flex;align-items:center;gap:0.45rem;padding:0.2rem 0.3rem;border-radius:3px;cursor:pointer;font-size:0.72rem">
+                    ${skullHtml}
+                    <span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${sanitizeHTML(q.name)}">${sanitizeHTML(q.name)}</span>
+                    <span style="color:var(--color-form-hint);white-space:nowrap">${timeLabel}</span>
+                    <i class="fas fa-arrow-right" style="font-size:0.6rem;opacity:0.5"></i>
+                </div>`;
+            }).join("");
+            return `<div class="wita-section-label">Active Quests</div><div style="margin:0 0 0.4rem">${rows}</div>`;
+        })()}
         ${game.user.isGM ? `
         <div class="wita-section-label">GM Controls</div>
         <div class="wita-btn-row">
@@ -140,6 +178,15 @@ export async function build(panel) {
 }
 
 export function bindListeners(el, panel) {
+    el.querySelectorAll(".wita-quest-status-row").forEach(row => {
+        row.addEventListener("mouseenter", () => row.style.background = "var(--color-bg-btn)");
+        row.addEventListener("mouseleave", () => row.style.background = "");
+        row.addEventListener("click", async () => {
+            const { WITAQuestDetail } = await import("../../../professions/quests/ui/quest-detail.js");
+            WITAQuestDetail.open(row.dataset.questId, null);
+        });
+    });
+
     el.querySelectorAll(".wita-rest-adj").forEach(btn =>
         btn.addEventListener("click", async () => {
             if (!game.user.isGM) return;

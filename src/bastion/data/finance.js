@@ -24,18 +24,22 @@ export function getFinancialSummary() {
         const portfolios = game.settings.get("financial-system", "stockPortfolios") ?? {};
         const accounts   = game.settings.get("financial-system", "bankAccounts")    ?? {};
 
-        // Only include properties owned by the banker actor that are rented (generating income)
+        const weeksPerMonth = _getWeeksPerMonth();
+
+        // Rented properties in this economy; filter by bankerActorId if configured
         const ownedProperties = (economy.properties ?? []).filter(p =>
-            p.owner === bankerActorId && p.rented
+            p.rented && (!bankerActorId || p.owner === bankerActorId)
         );
 
-        // Weekly income approximation: monthly / 4
-        const propertyIncome = ownedProperties.map(p => ({
-            name:          sanitizeHTML(p.name),
-            type:          sanitizeHTML(p.type),
-            monthlyIncome: p.monthlyIncome ?? 0,
-            weeklyIncome:  Math.round((p.monthlyIncome ?? 0) / 4),
-        }));
+        const propertyIncome = ownedProperties.map(p => {
+            const weekly = p.monthlyIncome ?? 0;  // financial-system "monthlyIncome" = per-turn (weekly) income
+            return {
+                name:          sanitizeHTML(p.name),
+                type:          sanitizeHTML(p.type),
+                weeklyIncome:  weekly,
+                monthlyIncome: Math.round(weekly * weeksPerMonth),
+            };
+        });
 
         const totalPropertyIncome = propertyIncome.reduce((sum, p) => sum + p.weeklyIncome, 0);
 
@@ -54,21 +58,58 @@ export function getFinancialSummary() {
                 totalValue:      ((portfolio[s.id] ?? 0) * (s.currentPrice ?? 0)).toFixed(2),
             }));
 
-        const account = Object.values(accounts)
-            .find(a => a.actorId === bankerActorId && a.economyId === economy.id);
+        const accountValues = Object.values(accounts);
+        const account = accountValues.find(a => a.actorId === bankerActorId && a.economyId === economy.id)
+                     ?? accountValues.find(a => a.actorId === bankerActorId && a.economyId === economyId)
+                     ?? accountValues.find(a => a.actorId === bankerActorId);
 
         return {
             propertyIncome,
             totalPropertyIncome,
             ownedStocks,
-            bankBalance: account?.balance ?? 0,
-            currency:    sanitizeHTML(economy.currency ?? "GP"),
+            bankBalance:   account?.balance ?? account?.amount ?? 0,
+            currency:      sanitizeHTML(economy.currency ?? "GP"),
+            weeksPerMonth,
         };
 
     } catch (e) {
         console.warn("WITA | Could not read financial data:", e);
         return null;
     }
+}
+
+// Returns the number of weeks in the current in-game calendar month via wgtgm-mini-calendar.
+// Falls back to 4 if the module isn't active or the API doesn't expose the needed data.
+function _getWeeksPerMonth() {
+    try {
+        const cal = game.modules.get("wgtgm-mini-calendar");
+        if (!cal?.active) return 4;
+        const api = cal.api ?? globalThis.MiniCalendar;
+        if (!api) return 4;
+
+        // Try to get days-in-month from the API (try several naming conventions)
+        const daysInMonth = api.daysInCurrentMonth?.()
+                         ?? api.currentMonthDays?.()
+                         ?? api.getMonthDays?.()
+                         ?? api.getDaysInMonth?.()
+                         ?? api.currentDate?.()?.daysInMonth
+                         ?? api.getDate?.()?.daysInMonth;
+
+        // Try to get days-per-week from the API
+        const daysPerWeek = api.daysPerWeek?.()
+                         ?? api.weekLength?.()
+                         ?? api.getWeekLength?.()
+                         ?? api.weekDays?.()?.length
+                         ?? api.getWeekdays?.()?.length;
+
+        if (daysInMonth > 0 && daysPerWeek > 0) {
+            return Math.round(daysInMonth / daysPerWeek);
+        }
+        console.warn("WITA | wgtgm-mini-calendar: could not determine daysInMonth/daysPerWeek — defaulting to 4 weeks/month.");
+    } catch(e) {
+        console.warn("WITA | wgtgm-mini-calendar read failed:", e);
+    }
+    return 4;
 }
 
 /**

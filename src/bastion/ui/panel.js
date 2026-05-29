@@ -137,9 +137,13 @@ export class WITABastionPanel extends foundry.applications.api.ApplicationV2 {
             btn.className = "wita-btn";
             btn.style.cssText = "margin-left:auto;font-size:0.65rem;padding:0.15rem 0.5rem;white-space:nowrap";
             btn.innerHTML = `<i class="fas fa-user"></i> Open Sheet`;
-            btn.addEventListener("click", () =>
-                this._seneschalActor.sheet?.render({ force: true, _witaBastionBypass: true })
-            );
+            btn.addEventListener("click", () => {
+                const actor = this._seneschalActor;
+                if (!actor) return;
+                _seneschalBypass.add(actor.id);
+                setTimeout(() => _seneschalBypass.delete(actor.id), 2000);
+                actor.sheet?.render({ force: true });
+            });
             header.appendChild(btn);
         }
         return header;
@@ -209,7 +213,9 @@ export function registerBastionPanel() {
     const _witaOpenPanel = () => {
         const existing = foundry.applications.instances.get(PANEL_ID);
         if (existing?.rendered) { existing.bringToFront(); return; }
-        new WITABastionPanel().render({ force: true });
+        const panel = new WITABastionPanel();
+        panel._playerMode = !game.user.isGM;
+        panel.render({ force: true });
     };
 
     const _witaInjectButton = () => {
@@ -242,6 +248,10 @@ export function registerBastionPanel() {
 
     // ── Seneschal intercept ────────────────────────────────────────
 
+    // Actor IDs temporarily allowed to open their sheet (from the "Open Sheet" button).
+    // Cleared after a short timeout so the intercept resumes for future interactions.
+    const _seneschalBypass = new Set();
+
     const _isSeneschal = (actor) => {
         const seneschalId = witaSetting("seneschalActorId");
         if (!seneschalId || !actor) return false;
@@ -271,24 +281,30 @@ export function registerBastionPanel() {
                 return wrapped(...args);
             }, "MIXED");
         } catch(e) { console.warn("WITA | Could not wrap NPCActorSheet.render:", e); }
-    } else {
-        const _seneschalClose = (app) => {
-            if (app.id === PANEL_ID) return;
-            if (!_isSeneschalApp(app)) return;
-            if (app.element) app.element.style.display = "none";
-            setTimeout(() => app.close(), 0);
-            _witaOpenPlayerPanel(app.document ?? app.actor);
-        };
-        Hooks.on("renderActorSheetV2",   _seneschalClose);
-        Hooks.on("renderNPCActorSheet",  _seneschalClose);
-        Hooks.on("renderBaseActorSheet", _seneschalClose);
     }
+
+    // Always register render hooks as a safety net — preRenderApplication cancellation is
+    // unreliable in v14 ApplicationV2, and libWrapper may target a stale class path.
+    const _seneschalClose = (app) => {
+        if (app.id === PANEL_ID) return;
+        const actor = app.document ?? app.actor;
+        if (_seneschalBypass.has(actor?.id)) return;
+        if (!_isSeneschalApp(app)) return;
+        if (app.element) app.element.style.display = "none";
+        setTimeout(() => app.close(), 0);
+        _witaOpenPlayerPanel(actor);
+    };
+    Hooks.on("renderActorSheetV2",   _seneschalClose);
+    Hooks.on("renderNPCActorSheet",  _seneschalClose);
+    Hooks.on("renderBaseActorSheet", _seneschalClose);
 
     Hooks.on("preRenderApplication", (app, options) => {
         if (options?._witaBastionBypass) return true;
+        const actor = app.document ?? app.actor;
+        if (_seneschalBypass.has(actor?.id)) return true;
         if (app.id === PANEL_ID) return true;
         if (!_isSeneschalApp(app)) return true;
-        _witaOpenPlayerPanel(app.document ?? app.actor);
+        _witaOpenPlayerPanel(actor);
         return false;
     });
 

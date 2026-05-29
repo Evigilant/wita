@@ -4,7 +4,7 @@
 // ============================================================
 
 import { getQuests } from "../core/quest-data.js";
-import { sanitizeHTML } from "../../../core/utils.js";
+import { sanitizeHTML, witaCascadePosition } from "../../../core/utils.js";
 
 export class WITAQuestImport extends foundry.applications.api.ApplicationV2 {
 
@@ -26,7 +26,9 @@ export class WITAQuestImport extends foundry.applications.api.ApplicationV2 {
     static open(source, board) {
         const existing = foundry.applications.instances.get("wita-quest-import");
         if (existing?.rendered) { existing.close(); }
-        new WITAQuestImport(source, board).render({ force: true });
+        const pos = witaCascadePosition("wita-guildhall-board");
+        const dlg = new WITAQuestImport(source, board);
+        dlg.render({ force: true }).then(() => { if (pos.top !== undefined) dlg.setPosition(pos); });
     }
 
     async _renderHTML(context, options) {
