@@ -5,8 +5,13 @@
 // ============================================================
 import { witaPromptGatherEnvironment } from "./professions/crafters/potion/ui/gathering-dialog.js";
 
+async function _witaOpenCandidatesDialog(slotId) {
+    const { WITACandidatesDialog } = await import("./professions/recruiter/ui/candidates-dialog.js");
+    WITACandidatesDialog.open(slotId);
+}
+
 const _SOCKET_SETTING_ALLOWLIST = new Set([
-    "bastion", "bastionState", "guildhallQuests", "guildhallConfig", "bastionReports",
+    "bastion", "bastionState", "guildhallQuests", "guildhallConfig", "bastionReports", "bastionRecruitCandidates",
 ]);
 
 export function registerSocket(executeLootAndHarvest) {
@@ -14,6 +19,7 @@ export function registerSocket(executeLootAndHarvest) {
         const socket = socketlib.registerModule("wita");
         socket.register("executeLootAndHarvest", executeLootAndHarvest);
         socket.register("witaSelectGatherEnv", witaPromptGatherEnvironment);
+        socket.register("witaOpenCandidatesDialog", _witaOpenCandidatesDialog);
         socket.register("witaSetSetting", (key, value) => {
             if (!_SOCKET_SETTING_ALLOWLIST.has(key))
                 throw new Error(`WITA | Socket: setting '${key}' not in allowlist.`);

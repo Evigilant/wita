@@ -15,6 +15,10 @@ async function _witaWithLock(targetId, userId, fn) {
     }
     WITA_LOCKS.add(targetId);
     try { await fn(); }
+    catch(err) {
+        console.error("WITA | Loot error:", err);
+        whisperMessage(`⚠️ Loot failed: ${sanitizeHTML(String(err?.message ?? err))}`, userId);
+    }
     finally { WITA_LOCKS.delete(targetId); }
 }
 
@@ -226,4 +230,28 @@ export async function executeLootAndHarvest(targetIds, userId) {
     await executeHarvest(targetIds, userId);
 }
 
+// ── Context Menu Registration ────────────────────────────────
+export function registerLootContextMenu() {
+    Hooks.on("getTokenContextOptions", (token, options) => {
+        options.push({
+            name: "Loot & Harvest",
+            icon: "<i class='fas fa-skull'></i>",
+            condition: (token) => {
+                const t = token instanceof Token ? token : canvas.tokens.get(token.id ?? token);
+                return game.user.isGM && isDefeated(t);
+            },
+            callback: async (token) => {
+                const t = token instanceof Token ? token : canvas.tokens.get(token.id ?? token);
+                if (!t) return;
+                const targetIds = [t.id];
+                const userId    = game.user.id;
+                if (game.user.isGM) {
+                    await executeLootAndHarvest(targetIds, userId);
+                } else {
+                    await globalThis.WITA?.socket?.executeAsGM("executeLootAndHarvest", targetIds, userId);
+                }
+            },
+        });
+    });
+}
 console.log("WITA | Loot module loaded.");

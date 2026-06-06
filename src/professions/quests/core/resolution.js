@@ -50,7 +50,7 @@ function actorPowerRating(actor) {
 // ── Resolution ────────────────────────────────────────────────
 
 export async function resolveActiveQuests(turnNumber) {
-    const activeQuests = getQuests().filter(q => q.status === "active");
+    const activeQuests = getQuests().filter(q => q.status === "active" && q.assignedActorIds.length > 0);
     if (!activeQuests.length) return;
 
     for (const quest of activeQuests) {

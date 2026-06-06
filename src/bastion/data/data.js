@@ -67,7 +67,7 @@ export const WITA_ORDER_ICON = {
 
 export const WITA_ORDER_LABEL = {
     craft: "Craft", trade: "Trade", research: "Research",
-    harvest: "Harvest", recruit: "View", empower: "Empower", "": "None",
+    harvest: "Harvest", recruit: "Recruit", empower: "Empower", "": "None",
 };
 
 export const WITA_ORDERS = ["", "craft", "trade", "research", "harvest", "recruit", "empower"];

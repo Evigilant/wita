@@ -17,6 +17,14 @@ const BOARD_ID = "wita-guildhall-board";
 
 export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
 
+    constructor(options = {}) {
+        super(options);
+        this._search      = "";
+        this._dangerFilter = 0;       // 0 = all
+        this._sortDir     = "asc";    // "asc" | "desc" — applies to Available column
+        this._collapsed   = { Available: false, Active: false, Completed: true };
+    }
+
     static DEFAULT_OPTIONS = {
         id:       BOARD_ID,
         window:   { resizable: true, title: "Quest Board" },
@@ -66,11 +74,23 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
             : [];
         const guildhallCount = guildhallWorkers.length;
 
-        const available  = quests.filter(q => q.status === QUEST_STATUS.AVAILABLE);
-        const active     = quests.filter(q => q.status === QUEST_STATUS.ACTIVE);
-        const completed  = quests.filter(q =>
+        // Apply search filter across all columns
+        const searchTerm = this._search.trim().toLowerCase();
+        const matchSearch = q => !searchTerm
+            || q.name.toLowerCase().includes(searchTerm)
+            || (q.description ?? "").toLowerCase().includes(searchTerm);
+
+        // Available: filter by danger + search, then sort
+        let available = quests.filter(q => q.status === QUEST_STATUS.AVAILABLE).filter(matchSearch);
+        if (this._dangerFilter) available = available.filter(q => q.dangerLevel === this._dangerFilter);
+        available = [...available].sort((a, b) =>
+            this._sortDir === "asc" ? a.dangerLevel - b.dangerLevel : b.dangerLevel - a.dangerLevel
+        );
+
+        const active = quests.filter(q => q.status === QUEST_STATUS.ACTIVE).filter(matchSearch);
+        const completed = quests.filter(q =>
             q.status === QUEST_STATUS.COMPLETED || q.status === QUEST_STATUS.FAILED
-        ).slice(-10); // last 10
+        ).filter(matchSearch).slice(-10);
 
         const frag = document.createDocumentFragment();
 
@@ -115,6 +135,31 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
         }
         frag.appendChild(header);
 
+        // ── Toolbar ───────────────────────────────────────────
+        const toolbar = document.createElement("div");
+        toolbar.className = "wita-gb-toolbar";
+        toolbar.innerHTML = `
+            <input type="text" id="wita-gb-search" placeholder="Search quests…"
+                value="${sanitizeHTML(this._search)}"
+                style="flex:1;min-width:0;border:1px solid var(--color-fieldset-border);
+                       border-radius:3px;padding:0.25rem 0.5rem;font-size:0.75rem;font-family:inherit">
+            <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0">
+                <label style="font-size:0.7rem;color:var(--color-form-hint);white-space:nowrap">Danger</label>
+                <select id="wita-gb-danger-filter"
+                    style="border:1px solid var(--color-fieldset-border);border-radius:3px;
+                           padding:0.2rem 0.35rem;font-size:0.72rem">
+                    <option value="0" ${this._dangerFilter===0?"selected":""}>All</option>
+                    ${[1,2,3,4,5].map(n => `<option value="${n}" ${this._dangerFilter===n?"selected":""}>${n} — ${DANGER_LEVELS[n].label}</option>`).join("")}
+                </select>
+                <button id="wita-gb-sort-dir" class="wita-gb-btn" title="Sort Available by danger level"
+                    style="padding:0.2rem 0.4rem;font-size:0.72rem">
+                    <i class="fas fa-sort-amount-${this._sortDir === "asc" ? "up" : "down"}"></i>
+                    ${this._sortDir === "asc" ? "ASC" : "DESC"}
+                </button>
+            </div>
+        `;
+        frag.appendChild(toolbar);
+
         // ── Three columns ─────────────────────────────────────
         const cols = document.createElement("div");
         cols.className = "wita-gb-columns";
@@ -134,15 +179,25 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
     _buildColumn(title, quests, isGM, capacity, readonly = false) {
         const col = document.createElement("div");
         col.className = "wita-gb-col";
+        const isCollapsed = this._collapsed[title] ?? false;
 
         const hdr = document.createElement("div");
         hdr.className = "wita-gb-col-header";
-        hdr.innerHTML = `<span>${title}</span><span class="wita-gb-col-count">${quests.length}</span>`;
+        hdr.style.cssText = "cursor:pointer;user-select:none;";
+        hdr.dataset.colTitle = title;
+        hdr.innerHTML = `
+            <span>${title}</span>
+            <span style="display:flex;align-items:center;gap:0.4rem">
+                <span class="wita-gb-col-count">${quests.length}</span>
+                <i class="fas fa-chevron-${isCollapsed ? "down" : "up"}"
+                   style="font-size:0.6rem;opacity:0.6"></i>
+            </span>
+        `;
         col.appendChild(hdr);
 
         const list = document.createElement("div");
         list.className = "wita-gb-col-list";
-        list.style.cssText = "overflow-y:auto;flex:1;";
+        list.style.cssText = `overflow-y:auto;flex:1;${isCollapsed ? "display:none;" : ""}`;
 
         if (quests.length === 0) {
             list.innerHTML = `<div class="wita-gb-empty">No quests</div>`;
@@ -234,6 +289,7 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
             </div>` : ""}
         `;
 
+        card.dataset.searchText = `${quest.name} ${quest.description ?? ""}`.toLowerCase();
         card.setAttribute("draggable", "true");
         card.addEventListener("dragstart", (e) => {
             e.dataTransfer.setData("text/plain", JSON.stringify({ questId: quest.id }));
@@ -248,6 +304,43 @@ export class WITAQuestBoard extends foundry.applications.api.ApplicationV2 {
     }
 
     _attachListeners(el) {
+        // Search — filter in-place to preserve focus
+        el.querySelector("#wita-gb-search")?.addEventListener("input", (e) => {
+            this._search = e.target.value;
+            const term = this._search.trim().toLowerCase();
+            el.querySelectorAll(".wita-gb-col").forEach(col => {
+                let visible = 0;
+                col.querySelectorAll(".wita-gb-card").forEach(card => {
+                    const match = !term || card.dataset.searchText?.includes(term);
+                    card.style.display = match ? "" : "none";
+                    if (match) visible++;
+                });
+                const badge = col.querySelector(".wita-gb-col-count");
+                if (badge) badge.textContent = visible;
+            });
+        });
+
+        // Danger filter
+        el.querySelector("#wita-gb-danger-filter")?.addEventListener("change", (e) => {
+            this._dangerFilter = parseInt(e.target.value) || 0;
+            this.render({ force: true });
+        });
+
+        // Sort direction toggle
+        el.querySelector("#wita-gb-sort-dir")?.addEventListener("click", () => {
+            this._sortDir = this._sortDir === "asc" ? "desc" : "asc";
+            this.render({ force: true });
+        });
+
+        // Column collapse toggles
+        el.querySelectorAll(".wita-gb-col-header[data-col-title]").forEach(hdr => {
+            hdr.addEventListener("click", () => {
+                const title = hdr.dataset.colTitle;
+                this._collapsed[title] = !this._collapsed[title];
+                this.render({ force: true });
+            });
+        });
+
         // Open bastion panel to guildhall
         el.querySelector("#wita-gb-open-bastion")?.addEventListener("click", async () => {
             let panel = foundry.applications.instances.get("wita-bastion-panel");

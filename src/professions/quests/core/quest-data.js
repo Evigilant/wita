@@ -34,6 +34,7 @@ export async function createQuest(data) {
         rewardGold:       data.rewardGold ?? 0,
         maxSlots:         4,
         assignedActorIds: [],                              // world actor IDs
+        gmNotes:          data.gmNotes ?? "",
         status:           "available",
         turnAssigned:     null,
         outcome:          null,
@@ -118,8 +119,6 @@ export async function unassignActorFromQuest(questId, actorId) {
 export async function dispatchQuest(questId, turnNumber) {
     const quest = getQuestById(questId);
     if (!quest) throw new Error(`Quest ${questId} not found`);
-    if (quest.assignedActorIds.length === 0)
-        throw new Error("Cannot dispatch a quest with no hirelings assigned");
     return updateQuest(questId, {
         status:       "active",
         turnAssigned: turnNumber,

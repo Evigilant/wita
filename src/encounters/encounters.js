@@ -202,7 +202,7 @@ class WITAEncounterConvertDialog extends foundry.applications.api.ApplicationV2 
                 "campaign-codex": {
                     type: "quest",
                     data: {
-                        description: "",
+                        description,
                         notes:       "",
                         quests: [{
                             id:                  questId,
@@ -255,6 +255,9 @@ class WITAEncounterConvertDialog extends foundry.applications.api.ApplicationV2 
         // Refresh quest board if open
         const board = foundry.applications.instances.get("wita-guildhall-board");
         if (board?.rendered) board.render({ force: true });
+
+        // Open the CC quest sheet for immediate editing
+        journalEntry.sheet.render({ force: true });
 
         this.close();
     }

@@ -9,7 +9,6 @@ export function registerGuildhall() {
     registerGuildhallSettings();
     _registerSeneschalIntercept();
     _registerTurnHook();
-    _registerOrderIntercept();
     _registerContextMenu();
     _registerPublicAPI();
 
@@ -19,38 +18,31 @@ export function registerGuildhall() {
 // ── Bastion turn detection ────────────────────────────────────
 
 function _registerTurnHook() {
-    // Primary resolution is called directly from runBastionTurn via game.wita.guildhall.resolveNow()
-    // This hook refreshes the quest board UI when bastionState changes
+    const _BOARD_REFRESH_KEYS = new Set(["bastionState", "guildhallQuests", "guildhallConfig"]);
     Hooks.on("updateSetting", (setting) => {
         if (setting.namespace !== "wita") return;
-        if (setting.key !== "bastionState") return;
+        if (!_BOARD_REFRESH_KEYS.has(setting.key)) return;
         const board = foundry.applications.instances.get("wita-guildhall-board");
         if (board?.rendered) board.render({ force: true });
-    });
-}
-
-// ── Guildhall "Recruit" order intercept ───────────────────────
-
-function _registerOrderIntercept() {
-    Hooks.on("wita.preSetFacilityOrder", (slot, newOrder) => {
-        if (slot.facilityItemId !== GUILDHALL_ITEM_ID) return;
-        if (newOrder !== "recruit") return;
-        WITAQuestBoard.open();
-        return false; // cancel default WITA order save
     });
 }
 
 // ── Token right-click context menu ───────────────────────────
 
 function _registerContextMenu() {
-    Hooks.on("getTokenContextOptions", (token, options) => {
+    Hooks.on("getTokenContextOptions", (html, options) => {
         const stored = game.settings.get("wita", "questBoardActorId");
         if (!stored) return;
-        const tActorId = token.document?.actorId ?? "";
-        if (!stored.includes(tActorId) && stored !== tActorId) return;
         options.unshift({
-            name:     "Open Quest Board",
-            icon:     "<i class='fas fa-scroll'></i>",
+            name:      "Open Quest Board",
+            icon:      "<i class='fas fa-scroll'></i>",
+            condition: li => {
+                const tokenId = li?.data?.("tokenId") ?? li?.dataset?.tokenId;
+                const tok = canvas.tokens.get(tokenId);
+                if (!tok) return false;
+                const tActorId = tok.document?.actorId ?? "";
+                return stored.includes(tActorId) || stored === tActorId;
+            },
             callback: () => WITAQuestBoard.open(),
         });
     });
