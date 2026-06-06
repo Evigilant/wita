@@ -72,6 +72,11 @@ export const WITA_WORKER_PROFESSIONS = {
         ["barracks", "bedroom", "armory", "training area", "war room"],
         ["Whiteshield", "Guardsman", "Sergeant", "Commissar"],
         { bastionTurnActive: 30, crisisSetbackSurvival: 50 }),
+
+    recruiter:     mkProf("Recruiter",             "fas fa-users",
+        ["barracks", "war room", "menagerie", "teleportation circle"],
+        ["Scout", "Headhunter", "Handler", "Spymaster"],
+        { bastionTurnActive: 30, hireCommon: 25, hireUncommon: 75, hireRare: 200, hireVeryRare: 500, crisisSetbackSurvival: 40 }),
 };
 
 // ── Defender ranks ────────────────────────────────────────────

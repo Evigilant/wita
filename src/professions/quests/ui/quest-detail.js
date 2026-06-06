@@ -137,9 +137,28 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
                 </div>` : ""}
             </div>
 
-            ${quest.description ? `
             <div class="wita-qd-section-label">Description</div>
-            <div class="wita-qd-desc">${quest.description}</div>` : ""}
+            ${isGM && !isDone ? `
+            <textarea id="wita-qd-desc-input" rows="4"
+                placeholder="Quest description…"
+                style="width:100%;box-sizing:border-box;background:var(--color-bg-form);
+                       color:var(--color-text-primary);border:1px solid var(--color-fieldset-border);
+                       border-radius:3px;padding:0.35rem 0.4rem;font-size:0.75rem;
+                       font-family:inherit;resize:vertical;line-height:1.4"
+            >${sanitizeHTML(quest.description ?? "")}</textarea>` : `
+            <div class="wita-qd-desc">${quest.description ?? "<em style='color:var(--color-form-hint)'>No description.</em>"}</div>`}
+
+            ${isGM ? `
+            <div class="wita-qd-section-label" style="color:var(--color-level-warning)">
+                <i class="fas fa-lock" style="font-size:0.65rem"></i> GM Notes
+            </div>
+            <textarea id="wita-qd-gmnotes-input" rows="3"
+                placeholder="Private GM notes (not visible to players)…"
+                style="width:100%;box-sizing:border-box;background:var(--color-bg-form);
+                       color:var(--color-text-primary);border:1px solid var(--color-level-warning);
+                       border-radius:3px;padding:0.35rem 0.4rem;font-size:0.75rem;
+                       font-family:inherit;resize:vertical;line-height:1.4;opacity:0.9"
+            >${sanitizeHTML(quest.gmNotes ?? "")}</textarea>` : ""}
 
             <div class="wita-qd-section-label">
                 Hirelings (${assignedActors.length}/${quest.maxSlots})
@@ -272,6 +291,19 @@ export class WITAQuestDetail extends foundry.applications.api.ApplicationV2 {
             const { updateQuest } = await import("../core/quest-data.js");
             await updateQuest(questId, { name: newName });
             await board?.render({ force: true });
+        });
+
+        // Description edit
+        el.querySelector("#wita-qd-desc-input")?.addEventListener("change", async (e) => {
+            const { updateQuest } = await import("../core/quest-data.js");
+            await updateQuest(questId, { description: e.target.value });
+            await board?.render({ force: true });
+        });
+
+        // GM Notes edit
+        el.querySelector("#wita-qd-gmnotes-input")?.addEventListener("change", async (e) => {
+            const { updateQuest } = await import("../core/quest-data.js");
+            await updateQuest(questId, { gmNotes: e.target.value });
         });
 
         // Source link

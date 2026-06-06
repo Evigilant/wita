@@ -49,7 +49,8 @@ Hooks.once("init", () => {
     });
     game.settings.register("wita", "bastion",         { scope: "world", config: false, type: Object, default: {} });
     game.settings.register("wita", "engineeringCosts",{ scope: "world", config: false, type: Object, default: {} });
-    game.settings.register("wita", "bastionReports",  { scope: "world", config: false, type: Object, default: { detailed: [], archive: [] } });
+    game.settings.register("wita", "bastionReports",           { scope: "world", config: false, type: Object, default: { detailed: [], archive: [] } });
+    game.settings.register("wita", "bastionRecruitCandidates", { scope: "world", config: false, type: Object, default: {} });
 
     console.log("WITA | Settings registered.");
 });
