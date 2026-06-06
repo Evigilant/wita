@@ -11,6 +11,8 @@ import { liveDefenderCount,
          WITA_WORKER_PROFESSIONS }                    from "../../../professions/workers/index.js";
 import { buildWorkerFormHTML, buildRoleFieldHTML,
          professionChip, rankBadge }                  from "../panel-utils.js";
+import { WEEKLY_WAGES, formatWage }                   from "../../data/finance.js";
+import { PROFESSION_PROGRESSION }                      from "../../../professions/workers/config.js";
 
 export function build(panel) {
     const el      = document.createElement("div");
@@ -148,7 +150,38 @@ export function build(panel) {
         el.appendChild(defBtnRow);
     }
 
+    el.appendChild(_buildReferenceSection());
+
     return el;
+}
+
+function _buildReferenceSection() {
+    const xpRows = PROFESSION_PROGRESSION.map(r => `
+        <tr>
+            <td style="padding:0.15rem 0.4rem;text-align:center">Lv ${r.level}</td>
+            <td style="padding:0.15rem 0.4rem;text-align:center">${r.xp === 0 ? "—" : r.xp.toLocaleString()}</td>
+            <td style="padding:0.15rem 0.4rem;text-align:center">+${r.bonus}</td>
+            <td style="padding:0.15rem 0.4rem;text-align:right">${formatWage(WEEKLY_WAGES[r.level] ?? 0)}</td>
+        </tr>`).join("");
+
+    const details = document.createElement("details");
+    details.style.cssText = "margin-top:0.75rem;font-size:0.72rem";
+    details.innerHTML = `
+        <summary style="cursor:pointer;color:var(--color-form-hint);user-select:none;list-style:none;display:flex;align-items:center;gap:0.3rem">
+            <i class="fas fa-info-circle"></i> Progression &amp; Wage Reference
+        </summary>
+        <table style="width:100%;border-collapse:collapse;margin-top:0.4rem;font-size:0.72rem">
+            <thead>
+                <tr style="color:var(--color-form-hint);border-bottom:1px solid var(--color-fieldset-border)">
+                    <th style="padding:0.1rem 0.4rem;text-align:center;font-weight:600">Level</th>
+                    <th style="padding:0.1rem 0.4rem;text-align:center;font-weight:600">XP Required</th>
+                    <th style="padding:0.1rem 0.4rem;text-align:center;font-weight:600">Roll Bonus</th>
+                    <th style="padding:0.1rem 0.4rem;text-align:right;font-weight:600">Wage / wk</th>
+                </tr>
+            </thead>
+            <tbody>${xpRows}</tbody>
+        </table>`;
+    return details;
 }
 
 function _buildWorkerTable(workers, slotName) {
@@ -158,7 +191,7 @@ function _buildWorkerTable(workers, slotName) {
     tbl.innerHTML = `
         <thead><tr>
             <th>Name</th><th>Role</th><th>Profession</th><th>Facility</th>
-            <th>Status</th><th>Morale</th>
+            <th>Status</th><th>Morale</th><th style="text-align:right">Wage/wk</th>
             ${isGM ? "<th></th>" : ""}
         </tr></thead>
     `;
@@ -182,6 +215,12 @@ function _buildWorkerTable(workers, slotName) {
                     <span class="wita-morale-num">${w.morale ?? 50}</span>
                 </div>
             </td>
+            <td style="text-align:right;font-size:0.72rem;white-space:nowrap">${(() => {
+                if (w.wageExempt) return `<span style="color:var(--color-form-hint);font-style:italic">Exempt</span>`;
+                const primary = w.primaryProfession;
+                const level   = primary ? (w.professions?.[primary]?.level ?? 1) : 1;
+                return `<span style="color:var(--color-form-hint)">${formatWage(WEEKLY_WAGES[level] ?? 14)}</span>`;
+            })()}</td>
             ${isGM ? `<td><div class="wita-worker-actions">
                 <button class="wita-icon-btn wita-edit-worker"   data-worker-id="${w.id}"><i class="fas fa-pencil"></i></button>
                 <button class="wita-icon-btn danger wita-delete-worker" data-worker-id="${w.id}"><i class="fas fa-trash"></i></button>
@@ -357,13 +396,14 @@ export async function openWorkerDialog(panel, workerId) {
                 const morale            = parseInt(f.querySelector("[name=morale]").value) || 70;
                 const slotId            = f.querySelector("[name=slotId]").value || null;
                 const primaryProfession = f.querySelector("[name=primaryProfession]").value || null;
+                const wageExempt        = f.querySelector("[name=wageExempt]")?.checked ?? false;
                 if (workerId) {
-                    await updateWorker(workerId, { name, role, status, morale, primaryProfession });
+                    await updateWorker(workerId, { name, role, status, morale, primaryProfession, wageExempt });
                     await assignWorkerToSlot(workerId, slotId);
                 } else {
                     const newId = await createWorker({ name, role, status, morale });
                     if (newId) {
-                        if (primaryProfession) await updateWorker(newId, { primaryProfession });
+                        if (primaryProfession || wageExempt) await updateWorker(newId, { primaryProfession, wageExempt });
                         if (slotId) await assignWorkerToSlot(newId, slotId);
                     }
                 }
@@ -395,9 +435,10 @@ export async function openWorkerDialogForSlot(panel, slotId) {
                 const morale            = parseInt(f.querySelector("[name=morale]").value) || 70;
                 const sid               = f.querySelector("[name=slotId]").value || null;
                 const primaryProfession = f.querySelector("[name=primaryProfession]").value || null;
+                const wageExempt        = f.querySelector("[name=wageExempt]")?.checked ?? false;
                 const newId  = await createWorker({ name, role, status, morale });
                 if (newId) {
-                    if (primaryProfession) await updateWorker(newId, { primaryProfession });
+                    if (primaryProfession || wageExempt) await updateWorker(newId, { primaryProfession, wageExempt });
                     if (sid) await assignWorkerToSlot(newId, sid);
                 }
                 await panel.render({ force: true });

@@ -147,8 +147,10 @@ export async function build(panel) {
                     ? Math.max(0, (q.turnAssigned + 1) - turnNumber)
                     : 1;
                 const skullHtml = `<span style="color:${danger.colour};letter-spacing:-0.1em">${"💀".repeat(skulls)}</span>`;
-                const timeLabel = turnsLeft === 0 ? `<span style="color:var(--color-level-warning)">resolves this turn</span>`
-                                                  : `${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""}`;
+                const timeLabel = (q.assignedActorIds?.length ?? 0) === 0
+                    ? `<span style="color:var(--color-level-success)">Active</span>`
+                    : turnsLeft === 0 ? `<span style="color:var(--color-level-warning)">resolves this turn</span>`
+                    : `${turnsLeft} turn${turnsLeft !== 1 ? "s" : ""}`;
                 return `<div class="wita-quest-status-row" data-quest-id="${q.id}" style="display:flex;align-items:center;gap:0.45rem;padding:0.2rem 0.3rem;border-radius:3px;cursor:pointer;font-size:0.72rem">
                     ${skullHtml}
                     <span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${sanitizeHTML(q.name)}">${sanitizeHTML(q.name)}</span>
@@ -158,11 +160,36 @@ export async function build(panel) {
             }).join("");
             return `<div class="wita-section-label">Active Quests</div><div style="margin:0 0 0.4rem">${rows}</div>`;
         })()}
+        ${(() => {
+            if (!game.user.isGM) return "";
+            let candidateMap = {};
+            try { candidateMap = game.settings.get("wita", "bastionRecruitCandidates") ?? {}; } catch { return ""; }
+            const entries = Object.values(candidateMap).filter(e => e.candidates?.length);
+            if (!entries.length) return "";
+            const rows = entries.map(e => `
+                <div class="wita-recruit-status-row" data-slot-id="${sanitizeHTML(e.slotId)}"
+                    style="display:flex;align-items:center;gap:0.45rem;padding:0.2rem 0.3rem;border-radius:3px;cursor:pointer;font-size:0.72rem">
+                    <i class="fas fa-users" style="color:var(--color-highlights)"></i>
+                    <span style="flex:1;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        ${sanitizeHTML(e.facilityName)}
+                    </span>
+                    <span style="color:var(--color-form-hint);white-space:nowrap">
+                        ${e.candidates.length} candidate${e.candidates.length !== 1 ? "s" : ""}
+                    </span>
+                    <i class="fas fa-arrow-right" style="font-size:0.6rem;opacity:0.5"></i>
+                </div>`).join("");
+            return `<div class="wita-section-label">Pending Recruits</div><div style="margin:0 0 0.4rem">${rows}</div>`;
+        })()}
+        <div class="wita-btn-row">
+            <button class="wita-btn" id="wita-open-quest-board"
+                style="flex:1;background:var(--color-highlights);color:#fff;font-weight:700;font-size:0.82rem;border-color:var(--color-highlights)">
+                <i class="fas fa-scroll"></i> Quest Board
+            </button>
+        </div>
         ${game.user.isGM ? `
         <div class="wita-section-label">GM Controls</div>
         <div class="wita-btn-row">
             <button class="wita-btn" id="wita-trigger-turn"><i class="fas fa-dice-d20"></i> Trigger Turn</button>
-            <button class="wita-btn" id="wita-open-journal"><i class="fas fa-book-open"></i> Journal</button>
         </div>
         <div class="wita-btn-row" style="align-items:center;gap:0.5rem;margin-top:0.4rem">
             <label style="font-size:0.72rem;color:var(--color-form-label);white-space:nowrap">Bastion Tier</label>
@@ -184,6 +211,15 @@ export function bindListeners(el, panel) {
         row.addEventListener("click", async () => {
             const { WITAQuestDetail } = await import("../../../professions/quests/ui/quest-detail.js");
             WITAQuestDetail.open(row.dataset.questId, null);
+        });
+    });
+
+    el.querySelectorAll(".wita-recruit-status-row").forEach(row => {
+        row.addEventListener("mouseenter", () => row.style.background = "var(--color-bg-btn)");
+        row.addEventListener("mouseleave", () => row.style.background = "");
+        row.addEventListener("click", async () => {
+            const { WITACandidatesDialog } = await import("../../../professions/recruiter/ui/candidates-dialog.js");
+            WITACandidatesDialog.open(row.dataset.slotId);
         });
     });
 
@@ -213,8 +249,9 @@ export function bindListeners(el, panel) {
         await globalThis.WITA_BASTION?.triggerTurn?.();
     });
 
-    el.querySelector("#wita-open-journal")?.addEventListener("click", () => {
-        game.journal.getName(witaSetting("bastionName") ?? "")?.sheet.render({ force: true });
+    el.querySelector("#wita-open-quest-board")?.addEventListener("click", async () => {
+        const { WITAQuestBoard } = await import("../../../professions/quests/ui/quest-board.js");
+        WITAQuestBoard.open();
     });
 
     el.querySelector("#wita-tier-select")?.addEventListener("change", async (e) => {

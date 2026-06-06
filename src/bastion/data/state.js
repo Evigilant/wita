@@ -7,7 +7,7 @@ import { sanitizeHTML, getImperialDate } from "../../core/utils.js";
 import { witaSetting } from "../../settings/settings.js";
 import { getOrCreateBastionConfigJournal } from "./rollgen.js";
 import { rollBastionEvent, processFacilities } from "./rollgen.js";
-import { getFinancialSummary } from "./finance.js";
+import { getFinancialSummary, deductBankFunds, getWorkerWagesSummary } from "./finance.js";
 import { getBastionData, saveBastionData, allSlots } from "./data.js";
 import {
     generateAssetNarratives,
@@ -22,6 +22,12 @@ import { getProfessionForFacility } from "../../professions/workers/config.js";
 
 // ── Reentrancy guard ───────────────────────────────────────────
 let WITA_BASTION_RUNNING = false;
+
+// ── Rest debounce ──────────────────────────────────────────────
+// dnd5e fires restCompleted once per character. A party long rest
+// (all characters resting together) fires N hooks in the same tick
+// but represents one day, not N days. Only the first fires counts.
+let _restDebounceId = null;
 
 async function _witaBastionRun(fn) {
     if (WITA_BASTION_RUNNING) return false;
@@ -56,7 +62,10 @@ export async function onLongRestCompleted(actor, result) {
     if (actor.type !== "character") return;
     if (!witaSetting("enableBastionAutomation")) return;
 
-    console.log(`WITA | Long rest completed for ${sanitizeHTML(actor.name)}`);
+    if (_restDebounceId !== null) return;
+    _restDebounceId = setTimeout(() => { _restDebounceId = null; }, 30000);
+
+    console.log(`WITA | Long rest completed for ${sanitizeHTML(actor.name)} — counting as 1 day`);
 
     const state = await getBastionState();
     state.longRestCount = (state.longRestCount ?? 0) + 1;
@@ -120,8 +129,28 @@ export async function runBastionTurn(turnNumber) {
         // Award worker XP and apply morale ticks
         await _awardTurnXP(event, facilities);
 
+        // Deduct worker wages
+        if (financialEnabled) {
+            const wages = getWorkerWagesSummary();
+            if (wages.totalWeeklyWage > 0) {
+                const currency = financial?.currency ?? "GP";
+                const result   = await deductBankFunds(wages.totalWeeklyWage);
+                const content  = result.success
+                    ? `<p><strong>Worker Wages Paid:</strong> ${wages.totalWeeklyWage} ${currency} to ${wages.workers.length} hireling${wages.workers.length !== 1 ? "s" : ""}.</p>`
+                    : `<p><strong>Worker Wages Overdue:</strong> ${wages.totalWeeklyWage} ${currency} due — shortfall of ${result.shortfall} ${currency}. Morale may suffer.</p>`;
+                ChatMessage.create({
+                    content,
+                    whisper:  ChatMessage.getWhisperRecipients("GM"),
+                    speaker:  { alias: "Seneschal" },
+                });
+            }
+        }
+
         // Resolve active guildhall quests
         await game.wita?.guildhall?.resolveNow?.();
+
+        // Resolve recruiter candidate pools
+        await game.wita?.recruiter?.resolveNow?.(turnNumber);
 
         ui.notifications.info(`WITA | Bastion Turn #${turnNumber} complete. Check GM chat for instructions.`);
         console.log(`WITA | Bastion turn #${turnNumber} done. Report dated: ${date}`);

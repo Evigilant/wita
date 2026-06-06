@@ -1,17 +1,20 @@
-import { sanitizeHTML }          from "../../../core/utils.js";
-import { getFinancialSummary }   from "../../data/finance.js";
+import { sanitizeHTML }                                        from "../../../core/utils.js";
+import { getFinancialSummary, getWorkerWagesSummary, formatWage } from "../../data/finance.js";
 
 export async function build(_panel) {
     const el  = document.createElement("div");
     const fin = getFinancialSummary();
+    const currency = fin?.currency ?? "GP";
 
     if (!fin) {
-        el.innerHTML = `<div class="wita-empty">Financial System module not active or not configured.</div>`;
-        return el;
+        el.innerHTML = `<div class="wita-empty" style="margin-bottom:0.5rem">Financial System module not active or not configured.</div>`;
     }
 
-    const { propertyIncome, totalPropertyIncome, ownedStocks, bankBalance, currency, weeksPerMonth } = fin;
+    const { propertyIncome, totalPropertyIncome, ownedStocks, bankBalance, weeksPerMonth } = fin ?? {};
 
+    if (!fin) {
+        // Skip property/stock/bank sections — financial system not active
+    } else {
     el.innerHTML += `<div class="wita-section-label">Property Income</div>`;
     if (!propertyIncome?.length) {
         el.innerHTML += `<div class="wita-empty" style="padding:0.4rem 0">No rented properties.</div>`;
@@ -66,11 +69,55 @@ export async function build(_panel) {
         el.appendChild(stbl);
     }
 
+    // Worker Wages section (shown even when no properties, wages apply regardless)
+    const wages = getWorkerWagesSummary();
+    el.innerHTML += `<div class="wita-section-label">Worker Wages</div>`;
+    if (!wages.workers.length) {
+        el.innerHTML += `<div class="wita-empty" style="padding:0.4rem 0">No active workers.</div>`;
+    } else {
+        const wtbl = document.createElement("table");
+        wtbl.className = "wita-finance-table";
+        wtbl.innerHTML = `
+            <thead><tr>
+                <th>Worker</th>
+                <th>Profession</th>
+                <th style="text-align:center">Lvl</th>
+                <th style="text-align:right">Weekly</th>
+            </tr></thead>
+            <tbody>
+                ${wages.workers.map(w => `
+                <tr>
+                    <td>${sanitizeHTML(w.name)}</td>
+                    <td style="color:var(--color-form-hint)">${sanitizeHTML(w.profession)}</td>
+                    <td style="text-align:center">${w.level}</td>
+                    <td style="text-align:right;font-weight:600">${formatWage(w.weeklyWage)}</td>
+                </tr>`).join("")}
+                <tr style="border-top:1px solid var(--color-fieldset-border)">
+                    <td colspan="3" style="text-align:right;font-weight:700">Total Weekly</td>
+                    <td style="text-align:right;font-weight:700;color:var(--color-level-error)">${wages.totalWeeklyWage} ${currency}</td>
+                </tr>
+            </tbody>
+        `;
+        el.appendChild(wtbl);
+
+        // Net weekly income
+        const net = totalPropertyIncome - wages.totalWeeklyWage;
+        const netColour = net >= 0 ? "var(--color-level-success)" : "var(--color-level-error)";
+        const netEl = document.createElement("div");
+        netEl.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:0.3rem 0.5rem;margin:0.4rem 0;border:1px solid var(--color-fieldset-border);border-radius:3px;font-size:0.8rem";
+        netEl.innerHTML = `
+            <span style="font-weight:700">Net Weekly Income</span>
+            <span style="font-weight:700;color:${netColour}">${net >= 0 ? "+" : ""}${net} ${sanitizeHTML(currency)}</span>
+        `;
+        el.appendChild(netEl);
+    }
+
     el.innerHTML += `<div class="wita-section-label">Bank Account</div>`;
     const callout = document.createElement("div");
     callout.className = "wita-balance-callout";
     callout.innerHTML = `<span>Current Balance</span><span class="wita-balance-value">${bankBalance.toLocaleString()} ${currency}</span>`;
     el.appendChild(callout);
+    } // end if (fin)
 
     return el;
 }

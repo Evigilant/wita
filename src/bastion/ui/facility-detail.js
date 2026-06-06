@@ -169,8 +169,30 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
                 ${game.user.isGM ? `<button class="wita-detail-micro-btn wita-fd-add-hireling" style="margin-top:0.3rem"><i class="fas fa-plus"></i> Add Hireling</button>` : ""}
             </div>
             ${this._buildCommissionHTML(slot)}
+            ${this._buildRecruiterHTML(slot)}
         `;
         return inner;
+    }
+
+    _buildRecruiterHTML(slot) {
+        if (!game.user.isGM) return "";
+        const slotWorkers = (getBastionData().workers ?? []).filter(w =>
+            (slot.workerIds ?? []).includes(w.id)
+        );
+        if (!slotWorkers.some(w => w.primaryProfession === "recruiter")) return "";
+
+        let entry = null;
+        try { entry = (game.settings.get("wita", "bastionRecruitCandidates") ?? {})[slot.id] ?? null; } catch { /**/ }
+        const count = entry?.candidates?.length ?? 0;
+
+        return `
+            <div class="wita-fd-section-label" style="margin-top:0.5rem">Recruitment</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;padding:0.2rem 0;font-size:0.8rem">
+                <i class="fas fa-users" style="color:var(--color-highlights)"></i>
+                <span style="color:var(--color-form-hint)">${count > 0 ? `${count} candidate${count !== 1 ? "s" : ""} pending` : "No candidates"}</span>
+                ${count > 0 ? `<button class="wita-detail-micro-btn wita-fd-view-candidates" data-slot-id="${slot.id}" style="margin-left:auto">View</button>` : ""}
+                <button class="wita-detail-micro-btn wita-fd-reroll-recruiter" data-slot-id="${slot.id}"${count === 0 ? ' style="margin-left:auto"' : ""}>↺ Re-roll</button>
+            </div>`;
     }
 
     _buildCommissionHTML(slot) {
@@ -281,6 +303,15 @@ export class WITAFacilityDetail extends foundry.applications.api.ApplicationV2 {
         el.querySelector(".wita-fd-hireling-cap-inc")?.addEventListener("click", async () => {
             await adjustSlotCapacity(slot.id, "hirelingSlots", +1);
             await refresh();
+        });
+
+        el.querySelector(".wita-fd-reroll-recruiter")?.addEventListener("click", async () => {
+            await game.wita.recruiter.resolveNow(this._restState?.bst?.turnNumber ?? 1);
+            await refresh();
+        });
+
+        el.querySelector(".wita-fd-view-candidates")?.addEventListener("click", () => {
+            game.wita.recruiter.openCandidatesDialog(slot.id);
         });
 
         el.querySelector(".wita-fd-cancel-commission")?.addEventListener("click", async () => {

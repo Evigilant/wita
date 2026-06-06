@@ -2,6 +2,7 @@ import { sanitizeHTML, getRarityColor } from "../../core/utils.js";
 import { WITA_WORKER_STATUSES, getFacilityRoles } from "../data/data.js";
 import { WITA_WORKER_PROFESSIONS, WITA_DEFENDER_RANKS } from "../../professions/workers/config.js";
 import { WITAWorkerProfession } from "../../professions/workers/level.js";
+import { WEEKLY_WAGES, formatWage } from "../data/finance.js";
 
 export function moraleChip(morale) {
     const level = morale >= 80 ? "high" : morale >= 60 ? "mid" : "low";
@@ -84,6 +85,13 @@ export function buildWorkerFormHTML(worker, slots, curSlot) {
     ).join("");
     const curFacilityName = slots.find(s => s.id === curSlot)?.facilityName ?? "";
     const roleField = buildRoleFieldHTML(curFacilityName, worker?.role ?? "");
+
+    const primary    = worker?.primaryProfession;
+    const level      = primary ? (worker?.professions?.[primary]?.level ?? 1) : 1;
+    const exempt     = worker?.wageExempt ?? false;
+    const wageText   = exempt ? "Exempt" : primary ? `${formatWage(WEEKLY_WAGES[level] ?? 1.4)} / week (Level ${level})` : "—";
+    const wageColour = exempt ? "var(--color-form-hint)" : "var(--color-text-primary)";
+
     return `
         <div style="display:flex;flex-direction:column;gap:0.5rem;padding:0.25rem;font-family:var(--font-primary)">
             <label style="display:flex;flex-direction:column;gap:0.1rem;font-size:0.75rem;font-weight:600">
@@ -99,6 +107,12 @@ export function buildWorkerFormHTML(worker, slots, curSlot) {
                     <option value="">— None —</option>${profOpts}
                 </select>
             </label>
+            <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.72rem;padding:0.1rem 0.1rem 0">
+                <span style="color:var(--color-form-hint)">Wage: <strong style="color:${wageColour}">${wageText}</strong></span>
+                <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:600;cursor:pointer">
+                    <input type="checkbox" name="wageExempt" ${exempt ? "checked" : ""}> Exempt
+                </label>
+            </div>
             <label style="display:flex;flex-direction:column;gap:0.1rem;font-size:0.75rem;font-weight:600">
                 Facility <select name="slotId" style="font-size:0.78rem;padding:0.15rem 0.3rem;border:1px solid var(--color-fieldset-border);border-radius:3px">
                     <option value="">— Unassigned —</option>${slotOpts}

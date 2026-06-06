@@ -16,7 +16,7 @@ import { WITA_CRAFTING } from "./professions/core/registry.js";
 import "./professions/crafters/potion/ui/potion-main.js";
 
 // ── Loot ───────────────────────────────────────────────────────
-import { executeLootAndHarvest } from "./loot/loot.js";
+import { executeLootAndHarvest, registerLootContextMenu } from "./loot/loot.js";
 
 // ── Bastion (registers dnd5e.restCompleted hook as side effect)
 import "./bastion/data/state.js";
@@ -25,8 +25,10 @@ import { registerBastionPanel }         from "./bastion/ui/panel.js";
 import { handleEngineerPurchase }       from "./professions/merchants/data/purchase.js";
 import { openCustomFacilityDialog }    from "./professions/merchants/ui/dialogs.js";
 
-import { registerGuildhall } from "./bastion/facilities/guildhall.js";
-import { registerSmithy }   from "./bastion/facilities/smithy.js";
+import { registerGuildhall }  from "./bastion/facilities/guildhall.js";
+import { registerSmithy }    from "./bastion/facilities/smithy.js";
+import { registerRecruiter } from "./bastion/facilities/recruiter.js";
+import { registerWageDeductionListener } from "./bastion/data/finance.js";
 import { rollRandomEncounters, registerEncounterChatHook } from "./encounters/encounters.js";
 
 
@@ -50,9 +52,12 @@ Hooks.once("ready", () => {
     game.wita.bastion.handleEngineerPurchase   = handleEngineerPurchase;
     game.wita.bastion.openCustomFacilityDialog = openCustomFacilityDialog;
     game.wita.organizeRecipeCompendium         = organizeRecipeCompendium;
-    registerGuildhall(); // must run after game.wita is assigned
+    registerGuildhall();  // must run after game.wita is assigned
     registerSmithy();
+    registerRecruiter();
+    registerWageDeductionListener();
     registerEncounterChatHook();
+    registerLootContextMenu();
     // Expose encounter roller on game.wita
     game.wita.rollEncounters = rollRandomEncounters;
 
