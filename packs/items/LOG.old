@@ -1,3 +1,7 @@
-2026/06/05-09:08:17.592564 72f5cafbe6c0 Recovering log #147
-2026/06/05-09:08:17.595446 72f5cafbe6c0 Delete type=3 #146
-2026/06/05-09:08:17.595465 72f5cafbe6c0 Delete type=0 #147
+2026/06/28-13:58:38.577762 73cd8b7fe6c0 Recovering log #188
+2026/06/28-13:58:38.580218 73cd8b7fe6c0 Delete type=3 #186
+2026/06/28-13:58:38.580235 73cd8b7fe6c0 Delete type=0 #188
+2026/07/01-23:53:03.267193 73cb78fff6c0 Level-0 table #193: started
+2026/07/01-23:53:03.267203 73cb78fff6c0 Level-0 table #193: 0 bytes OK
+2026/07/01-23:53:03.269355 73cb78fff6c0 Delete type=0 #191
+2026/07/01-23:53:03.273702 73cb78fff6c0 Manual compaction at level-0 from '!folders!1QsDS9SSG0gst9Aj' @ 72057594037927935 : 1 .. '!items.effects!dmgTrainingArea0.vm5sP9BvWTpNSzq6' @ 0 : 0; will stop at (end)
